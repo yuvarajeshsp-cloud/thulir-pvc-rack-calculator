@@ -51,3 +51,5 @@
  #quoteTotals{gap:10px}#quoteTotals span{padding:13px}#quoteTotals b{overflow-wrap:anywhere}
  .visual-top,.visual-bottom{padding-left:16px;padding-right:16px}.visual nav{margin-left:16px;margin-right:16px;max-width:calc(100% - 32px);flex-wrap:wrap}
 }
+
+.visual>#views{margin-top:20px}.controls>.layout-label{margin-top:0}
