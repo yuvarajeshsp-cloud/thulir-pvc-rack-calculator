@@ -53,3 +53,31 @@
 }
 
 .visual>#views{margin-top:20px}.controls>.layout-label{margin-top:0}
+
+.step-tabs{display:flex;gap:4px;margin:0 0 18px;padding:4px;background:#eef2e9;border-radius:12px;overflow-x:auto;scrollbar-width:none}.step-tabs::-webkit-scrollbar{display:none}
+.step-tabs button{flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 9px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:11.5px;font-weight:600;white-space:nowrap}
+.step-tabs button b{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#dbe3d3;color:var(--ink);font-size:10px}
+.step-tabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 4px #0001}.step-tabs button[aria-selected=true] b{background:var(--green);color:#fff}
+.step-tabs button.done b{background:#b9cdb0;color:#fff}
+.step-panel[hidden]{display:none!important}.step-panel>.toggle:first-child,.step-panel>p:first-child{margin-top:0}
+.step-nav{display:flex;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}.step-nav button{flex:1;min-height:44px;font-weight:600}
+.step-nav button:disabled{opacity:.4;cursor:default}.step-nav .step-next{background:#294839;border-color:#294839;color:#fff}.step-nav .step-next:hover{background:#1f3a2d}
+.controls #reset{display:block;margin:12px auto 0}
+.step-tabs{display:grid;grid-template-columns:repeat(5,1fr);overflow:visible}.step-tabs button{flex-direction:column;gap:3px;padding:7px 2px;font-size:10px;min-width:0}.step-tabs button b{width:22px;height:22px;font-size:11px}
+
+/* Single header row: brand · page tabs · print */
+header{position:sticky;top:0;z-index:30;height:auto;min-height:64px;gap:20px;padding-top:8px;padding-bottom:8px;background:var(--paper)}
+header .brand{flex-shrink:0;font-size:28px}header .brand span{font-size:17px}
+header .page-tabs{position:static;flex:1;min-width:0;margin:0;padding:0;border:0;background:transparent;gap:4px;justify-content:center}
+header .page-tabs button{min-height:40px;padding:8px 14px;border-radius:999px}
+header #print{flex-shrink:0;padding:8px 14px;font-size:12px}
+main{padding-top:22px}
+@media(max-width:950px){header .page-tabs{justify-content:flex-start}header .page-tabs button{padding:8px 11px;font-size:12px}}
+@media(max-width:680px){
+ header{flex-wrap:wrap;gap:8px 12px;min-height:0;padding:8px 16px}
+ header .brand{font-size:22px}header .brand span{font-size:14px}
+ header #print{margin-left:auto}
+ header .page-tabs{order:3;flex:1 0 100%;scrollbar-width:none}header .page-tabs::-webkit-scrollbar{display:none}
+ header .page-tabs button{min-height:38px;font-size:12px;padding:7px 12px}
+ main{padding-top:16px}
+}
