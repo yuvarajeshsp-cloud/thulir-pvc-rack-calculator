@@ -22,4 +22,32 @@
 
 .catalogue-table{min-width:850px}.catalogue-table th:first-child{width:29%}.catalogue-table td:last-child{width:29%;text-align:left}.price-source-tag{display:inline-block;font-size:10px;font-weight:600;color:#775717;background:#f7eed8;padding:4px 7px;border-radius:5px}.price-research{margin-top:6px;font-size:11px}.price-research summary{cursor:pointer;min-height:32px;padding:6px 0;color:var(--green)}.price-research p{line-height:1.6}.price-research small{display:block;font-size:10px}.price-research a{display:inline-block;color:#315d48;margin-top:8px;min-height:30px}
 
-.native-app{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}.native-app .rack-stage.expanded{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+/* Dark viewing space, including fullscreen and orthographic views. */
+#rackStage,#rackStage.expanded,#rackStage::backdrop{background:#111b20}
+#pvcCanvas{background:radial-gradient(ellipse at 40% 28%,#2b3b41 0%,#19262c 58%,#0e171c 100%)}
+#rackStage .stage-note{color:#c2d1d5;text-shadow:0 1px 3px #000}
+#rackStage #zoomTools button,#rackStage #fullscreenToggle{background:#24343eee;color:#f1f6f8;border:1px solid #53666e;box-shadow:0 2px 10px #0004}
+#rackStage #zoomTools button:hover,#rackStage #fullscreenToggle:hover{background:#384d58}
+@media print{#rackStage,#pvcCanvas{background:#fff!important}}
+
+/* Comfortable controls and stacked, labelled price rows on small screens. */
+@media screen and (max-width:680px){
+ main{padding:22px 14px}.workspace{grid-template-columns:minmax(0,1fr)}
+ .controls{padding:18px}.two,.three{gap:10px;min-width:0}fieldset{min-width:0}
+ input[type=number],input[type=text],input:not([type]),select,textarea{font-size:16px!important;min-height:44px;max-width:100%}
+ button,summary,.toggle,.inspect-controls label{min-height:44px}.toggle input{width:22px;height:22px;flex-shrink:0}
+ input[type=range]{min-height:36px}.quote-fields,.quote-fields label{min-width:0}
+ .price-table,.catalogue-table{min-width:0;width:100%;display:block}
+ .price-table thead,.catalogue-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .price-table tbody,.catalogue-table tbody{display:block}
+ .price-table tr,.catalogue-table tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px;padding:16px 0;border-bottom:1px solid var(--line)}
+ .price-table td,.catalogue-table td{display:block!important;width:auto!important;min-width:0!important;text-align:left!important;padding:0;border:0;overflow-wrap:anywhere}
+ .price-table td:first-child,.catalogue-table td:first-child,.catalogue-table td:last-child{grid-column:1/-1}
+ .price-table td:first-child,.catalogue-table td:first-child{font-weight:600;font-size:14px}
+ td[data-label]::before{content:attr(data-label);display:block;font-size:11px;font-weight:400;color:var(--muted);margin-bottom:5px}
+ .price-table input,.catalogue-table input{width:100%;min-width:0;margin:0}
+ .price-table td:last-child:empty{display:none}.price-table td:last-child button{min-width:44px}
+ .price-research summary,.price-research a{min-height:44px}.price-research summary{display:flex;align-items:center}
+ #quoteTotals{gap:10px}#quoteTotals span{padding:13px}#quoteTotals b{overflow-wrap:anywhere}
+ .visual-top,.visual-bottom{padding-left:16px;padding-right:16px}.visual nav{margin-left:16px;margin-right:16px;max-width:calc(100% - 32px);flex-wrap:wrap}
+}

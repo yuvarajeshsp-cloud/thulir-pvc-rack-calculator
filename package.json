@@ -6,7 +6,9 @@
     "sync": "npm run build && cap sync",
     "android": "cap open android",
     "ios": "cap open ios",
-    "build": "esbuild src/mobile.js --bundle --minify --outfile=www/mobile.js"
+    "build": "node scripts/sync-web.cjs && esbuild src/mobile.js --bundle --minify --outfile=www/mobile.js",
+    "test": "node --test tests/*.test.cjs",
+    "sync:web": "node scripts/sync-web.cjs"
   },
   "dependencies": {
     "@capacitor/core": "8.5.3",

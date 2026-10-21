@@ -130,7 +130,7 @@ function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentG
   }
  }
  // A soft-looking layered contact shadow beneath the frame.
- for(let layer=5;layer>=0;layer--){const shade=.84+layer*.012,ry=model.D*.6+layer*15,rx=model.W*.6+layer*20,y=-4-layer*.1;for(let i=0;i<64;i++){const a=i*Math.PI*2/64,b=(i+1)*Math.PI*2/64;tri([0,y,0],[rx*Math.cos(a),y,ry*Math.sin(a)],[rx*Math.cos(b),y,ry*Math.sin(b)],[0,1,0],[shade,shade+.025,shade-.01]);}}
+ for(let layer=5;layer>=0;layer--){const shade=.045+layer*.007,ry=model.D*.6+layer*15,rx=model.W*.6+layer*20,y=-4-layer*.1;for(let i=0;i<64;i++){const a=i*Math.PI*2/64,b=(i+1)*Math.PI*2/64;tri([0,y,0],[rx*Math.cos(a),y,ry*Math.sin(a)],[rx*Math.cos(b),y,ry*Math.sin(b)],[0,1,0],[shade,shade+.025,shade+.035]);}}
  count=vertices.length/13;gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);vertices=[];render();
 }
 function multiply(a,b){const out=new Float32Array(16);for(let col=0;col<4;col++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)out[col*4+row]+=a[k*4+row]*b[col*4+k];return out;}
@@ -158,9 +158,9 @@ function render(){if(!model||canvas.hidden)return;const dpr=Math.min(window.devi
 }
 // Small dynamic buffer: the crop and frame stay on the GPU while accessories animate.
 function drawEffects(){
- const eq=model.equipment;if(!eq||model.layout!=='vertical')return;
- const fanOn=values.fans&&values.fansOn,lightOn=values.lights&&values.lightsOn;
- if(!fanOn&&!lightOn)return;
+ const eq=model.equipment;if(!eq)return;
+ const fanOn=model.layout==='vertical'&&values.fans&&values.fansOn,lightOn=model.layout==='vertical'&&values.lights&&values.lightsOn,waterOn=values.irrigation&&values.sprinklerOn;
+ if(!fanOn&&!lightOn&&!waterOn)return;
  const time=reducedMotion.matches?0:performance.now()/1000;
  currentID=0;currentGroup=0;vertices=[];
  if(fanOn)for(const fan of eq.fans){
@@ -183,7 +183,24 @@ function drawEffects(){
    const end=Math.min(1,t+.08),b=point(end);cylinder(point(t),b,1.8,[.24,.73,.85],0,5);cylinder(b,add(b,[-12,5,6]),1.6,[.24,.73,.85],0,5);cylinder(b,add(b,[-12,-5,-6]),1.6,[.24,.73,.85],0,5);
   }
  }uploadEffects(.65);}
- if(fanOn&&!reducedMotion.matches&&!document.hidden&&!effectFrame)effectFrame=requestAnimationFrame(()=>{effectFrame=0;if(canvas.getBoundingClientRect().width&&canvas.getBoundingClientRect().height)render();});
+ if(waterOn){
+  for(const nozzle of eq.nozzles){
+   const origin=world(nozzle.at),target=world(nozzle.target),direction=norm(sub(target,origin));
+   const start=add(origin,mul(direction,18));
+   // Individual droplets fan out from the actual nozzle tip into its own tray.
+   for(let stream=0;stream<9;stream++){
+    const angle=stream*2.399963,spread=Math.sqrt((stream+.5)/9);
+    const landing=add(target,[Math.cos(angle)*model.W*.065*spread,-12,Math.sin(angle)*model.rowD*.22*spread]);
+    const point=t=>add(add(start,mul(sub(landing,start),t)),[0,Math.sin(Math.PI*t)*28,0]);
+    for(let drop=0;drop<5;drop++){
+     const t=(time*.8+drop/5+stream*.071)%1;
+     cylinder(point(t),point(Math.min(1,t+.025)),1.6,[.52,.85,1],0,5);
+    }
+   }
+  }
+  uploadEffects(.78);
+ }
+ if((fanOn||waterOn)&&!reducedMotion.matches&&!document.hidden&&!effectFrame)effectFrame=requestAnimationFrame(()=>{effectFrame=0;if(canvas.getBoundingClientRect().width&&canvas.getBoundingClientRect().height)render();});
 }
 function uploadEffects(alpha){if(!vertices.length)return;gl.bindBuffer(gl.ARRAY_BUFFER,effectBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);bindGeometry(program,effectBuffer);gl.uniform1f(gl.getUniformLocation(program,'uAlpha'),alpha);if(alpha<1){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);}gl.drawArrays(gl.TRIANGLES,0,vertices.length/13);gl.depthMask(true);gl.disable(gl.BLEND);vertices=[];}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});

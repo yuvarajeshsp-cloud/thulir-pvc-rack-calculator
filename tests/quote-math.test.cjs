@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const q = require('../www/quote-math.js');
+const q = require('../dist/quote-math.js');
 
 test('markup is applied to every customer unit rate and scaled across racks', () => {
   const s = q.calculate({
@@ -49,4 +49,38 @@ test('selling-rate calculation rounds currency and only once in line totals', ()
   assert.equal(s.lines[0].unitRate,22.99);
   assert.equal(s.lines[0].amount,137.94);
   assert.equal(s.total,137.94);
+});
+
+
+test('requested example totals 2940 without double markup', () => {
+ const s=q.calculate({rows:[{id:'joint3',qty:4}],prices:{joint3:100},profit:20,rackQuantity:3,installation:500});
+ assert.equal(s.lines[0].unitRate,120);
+ assert.equal(s.lines[0].totalQty,12);
+ assert.equal(s.componentSubtotal,1440);
+ assert.equal(s.installationTotal,1500);
+ assert.equal(s.total,2940);
+});
+test('additional costs stay estimate-wide without component markup', () => {
+ const s=q.calculate({rows:[{id:'joint3',qty:4},{id:'delivery',qty:2,custom:true}],prices:{joint3:100,delivery:150},profit:20,rackQuantity:3,installation:500,discount:40,tax:10});
+ assert.equal(s.lines[1].totalQty,2);
+ assert.equal(s.lines[1].unitRate,150);
+ assert.equal(s.extraSubtotal,300);
+ assert.equal(s.subtotal,3240);
+ assert.equal(s.total,3520);
+});
+test('saved state migration removes obsolete catalogue entries and retains settings', () => {
+ const old={prices:{'stock-3':100,'stock-6.096':700,joint3:95},priceOverrides:{'stock-3':true,joint3:true},stockCatalogue:{'stock-3':{id:'stock-3',label:'PVC stock pipe · 9.84 ft'},'stock-6.096':{id:'stock-6.096'}},profit:20,customer:'Example',extra:[{id:'delivery',qty:1}]};
+ const s=q.migrate(old);
+ assert.equal(s.prices['stock-3'],undefined);
+ assert.equal(s.stockCatalogue['stock-3'],undefined);
+ assert.equal(s.priceOverrides['stock-3'],undefined);
+ assert.equal(s.prices['stock-6.096'],700);
+ assert.equal(s.prices.joint3,95);
+ assert.equal(s.priceOverrides.joint3,true);
+ assert.equal(s.profit,20);
+ assert.equal(s.customer,'Example');
+ assert.deepEqual(s.extra,old.extra);
+ assert.equal(s.rackQuantity,1);
+ assert.equal(s.installation,0);
+ assert.equal(old.prices['stock-3'],100);
 });

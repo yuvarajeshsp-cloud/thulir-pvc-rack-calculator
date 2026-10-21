@@ -1,11 +1,11 @@
 # Thulir PVC Rack Calculator
 
-Interactive microgreen rack planner with realistic 3D views, vertical and stepped racks, PVC pipe cutting plans and customer estimates. This repository holds the web app (`www/`) and the Capacitor Android/iOS project that bundles it for offline use.
+Interactive microgreen rack planner with realistic 3D views, vertical and stepped racks, PVC pipe cutting plans and customer estimates. This repository holds the canonical buildless web app (`dist/`), a generated mobile web copy (`www/`) and the Capacitor Android/iOS project that bundles it for offline use.
 
 ## Run in a browser
 
 ```sh
-python3 -m http.server 8000 --directory www
+python3 -m http.server 8000 --directory dist
 ```
 
 Open http://localhost:8000. No build step is required. Pushes to `main` publish `www/` to GitHub Pages at https://yuvarajeshsp-cloud.github.io/thulir-pvc-rack-calculator/ (see `.github/workflows/pages.yml`). `www/` also works on any other static web host; `www/mobile.js` only activates inside the native app.
@@ -48,7 +48,7 @@ The package identifier is `com.thulir.rackcalculator`; confirm ownership/choose 
 
 ### Editing
 
-`www/` is the app source; `src/mobile.js` implements native sharing, external links and Android Back. `npm run sync` bundles the bridge and copies web assets into both native projects. Keep the generated projects in source control. No production website changes are automatically pulled into this package.
+`dist/` is the canonical app source. Run `npm run sync:web` to refresh `www/`, which adds the native bridge. `npm test` runs the shared calculation and estimate rendering tests; `src/mobile.js` implements native sharing, external links and Android Back. `npm run sync` bundles the bridge and copies web assets into both native projects. Keep the generated projects in source control. No production website changes are automatically pulled into this package.
 
 ### Validation performed
 
@@ -64,3 +64,24 @@ Official references:
 - https://capacitorjs.com/docs/apis/share
 - https://capacitorjs.com/docs/apis/filesystem
 - https://capacitorjs.com/docs/apis/app
+
+
+## Pricing update · 21 October 2026
+
+
+
+- Set base prices, profit markup and installation per rack in Price Configuration.
+- Customer selling unit price = base price × (1 + markup / 100), rounded to paise.
+- Rack quantity defaults to 1; valid range is 1–999 whole racks.
+- Components and installation scale with rack quantity. Additional costs apply once across the entire estimate, without component markup.
+- Discount applies to components + installation + additional costs; tax applies after discount.
+- Printed estimates use the same shared calculation as the screen.
+- Existing browser settings use the same storage keys. Migration removes obsolete 3 m / 9.84 ft stock-price entries while preserving 20 ft prices and other settings.
+
+Example: 4 components × 3 racks × ₹120 selling price = ₹1,440; ₹500 installation × 3 = ₹1,500; total ₹2,940 before extras, discount and tax.
+
+Realistic 3D rendering, dark background, vertical/stepped layouts, cutting plans, connector images, fans, LEDs, irrigation, independent power controls and fullscreen remain included.
+
+## Validation
+
+11 automated calculation, migration, rendering/printing and plan regression tests pass. Browser checks confirm the ₹2,940 example, estimate-wide delivery, persisted pricing and responsive rows at 390 px. Native print/PDF dialog output was not visually verified in this environment; generated print HTML and totals are tested.

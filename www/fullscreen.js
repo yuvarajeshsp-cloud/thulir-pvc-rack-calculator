@@ -35,27 +35,25 @@
     window.dispatchEvent(new Event('resize'));
   }
 
-  async function exit() {
-    if (nativeElement() === stage) {
-      try {
-        const close = document.exitFullscreen || document.webkitExitFullscreen;
-        await close.call(document);
-      } catch (_) { /* Keep an exit control available if the browser refuses. */ }
-      if (nativeElement() === stage) return;
-    }
+  function exit() {
+    // Restore the app immediately; embedded-browser fullscreen promises can stall.
     setExpanded(false);
+    if (nativeElement() === stage) {
+      const close = document.exitFullscreen || document.webkitExitFullscreen;
+      try { Promise.resolve(close?.call(document)).catch(() => {}); } catch (_) {}
+    }
   }
 
-  button.addEventListener('click', async () => {
-    if (expanded) { await exit(); return; }
-    setExpanded(true);
-    const request = stage.requestFullscreen || stage.webkitRequestFullscreen;
-    if (request) {
-      try { await request.call(stage); }
-      catch (_) { /* Fixed-position full viewport works on unsupported phones/embeds. */ }
-    }
+  button.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    // Expand the 3D space within the app viewport, consistently on phones and embeds.
+    if (expanded) exit();
+    else setExpanded(true);
   });
-  function syncNative() { setExpanded(nativeElement() === stage); }
+  function syncNative() {
+    if (!nativeElement()) setExpanded(false);
+  }
   document.addEventListener('fullscreenchange', syncNative);
   document.addEventListener('webkitfullscreenchange', syncNative);
   document.addEventListener('keydown', event => {
