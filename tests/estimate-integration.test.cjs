@@ -9,7 +9,8 @@ function boot(saved){
  function node(){return {innerHTML:'',value:'',dataset:{},classList:{add(){},remove(){}},listeners:{},append(){},addEventListener(type,fn){this.listeners[type]=fn;}};}
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,body:node()};
  const storage=new Map([['thulirEstimateV1',JSON.stringify(saved)]]);
- const values={...defaults};const window={RackQuoteMath:math,currentRack:{values,model:calculate(values)},addEventListener(){},print(){}};
+ // Rack quantity now lives on Configure; seed it from the saved estimate as the one-time migration does.
+ const values={...defaults,racks:saved.rackQuantity||1};const window={RackQuoteMath:math,currentRack:{values,model:calculate(values)},addEventListener(){},print(){}};
  const ctx={window,document,localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},Intl,feetInches};
  vm.runInNewContext(fs.readFileSync(require.resolve('../dist/estimate.js'),'utf8'),ctx);
  return {nodes,storage,window};
@@ -44,4 +45,13 @@ test('rack plans retain connector and equipment counts across power switches',()
   assert.ok(a.cuts.length>0);assert.ok(a.joints.length>0);
   assert.ok(a.cuts.every(c=>Number.isFinite(c.cut)&&c.cut>0));
  }
+});
+test('estimate quantity follows the configured number of racks',()=>{
+ const {nodes}=boot({profit:20,installation:500,rackQuantity:2,prices:{'stock-6.096':0,joint3:100,joint4:0,joint5:0},extra:[]});
+ assert.match(nodes.get('priceRows').innerHTML,/4 × 2 = 8/);
+ assert.equal(String(nodes.get('quoteRackQuantity').value),'2');
+});
+test('rack plan geometry is per rack and independent of the rack quantity',()=>{
+ const one=calculate({...defaults,racks:1}),five=calculate({...defaults,racks:5});
+ assert.deepEqual(one.cuts,five.cuts);assert.deepEqual(one.counts,five.counts);assert.deepEqual(one.equipment.bill,five.equipment.bill);
 });

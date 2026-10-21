@@ -47,9 +47,15 @@ function cotyledon(base,angle,length,width,col,tilt){
  const ridge=add(centre,[0,1.5,0]);
  for(let i=0;i<10;i++){const a=outline[i],b=outline[(i+1)%10],normal=norm(cross(sub(b,ridge),sub(a,ridge)));tri(ridge,b,a,normal[1]<0?mul(normal,-1):normal,col);}
 }
-const world=p=>[p.x-model.W/2,p.z,p.y-model.D/2];
+// Several identical racks stand side by side along the width, separated by a walkway gap.
+const RACK_GAP=450;let rackOX=0;
+const rackOffsets=()=>{const n=Math.max(1,Math.min(20,Math.round(values?.racks||1))),pitch=model.W+RACK_GAP;return Array.from({length:n},(_,i)=>(i-(n-1)/2)*pitch);};
+const sceneW=()=>{const n=rackOffsets().length;return model.W*n+RACK_GAP*(n-1);};
+const world=p=>[p.x-model.W/2+rackOX,p.z,p.y-model.D/2];
 function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentGroup=0;hideTooltip();hoverGroup=0;const m=model,v=values,od=v.od,r=od/2;
  const pc=selected?[.8,.83,.78]:white;
+ const offsets=rackOffsets(),dense=offsets.length<=2,seedRows=dense?12:6,seedCols=dense?18:9;
+ for(let rack=0;rack<offsets.length;rack++){rackOX=offsets[rack];
  // Round pipe sections continue inside the socket hubs.
  for(let i=0;i<m.segments.length;i++){
   const s=m.segments[i],cut=m.cuts[i],key=cut.name+':'+cut.cut;if(!groups.has(key))groups.set(key,groups.size+1);
@@ -75,7 +81,7 @@ function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentG
  for(const s of m.segments.filter(s=>s.name==='Bottom leg')){const p=world(s.a);cylinder(p,add(p,[0,12,0]),r*1.13,[.27,.31,.27]);}
  const wire=selected?[.77,.81,.75]:[.62,.69,.60];
  for(const shelf of m.shelfRects){
-  const f=shelf.f,z=shelf.z+r+2,x0=-m.W/2,x1=m.W/2,d0=shelf.y0-m.D/2,d1=shelf.y1-m.D/2;
+  const f=shelf.f,z=shelf.z+r+2,x0=rackOX-m.W/2,x1=rackOX+m.W/2,d0=shelf.y0-m.D/2,d1=shelf.y1-m.D/2;
   for(let x=x0;x<=x1+1;x+=m.W/Math.ceil(m.W/48))cylinder([x,z,d0],[x,z,d1],1.3,wire,0,6);
   for(let d=d0;d<=d1+1;d+=m.rowD/Math.ceil(m.rowD/48))cylinder([x0,z+1,d],[x1,z+1,d],1.3,wire,0,6);
   if(v.trays){for(let t=0;t<4;t++){
@@ -83,9 +89,9 @@ function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentG
    box([a,z+3,da],[b,z+6,db],tray);box([a,z+6,da],[a+4,z+30,db],tray);box([b-4,z+6,da],[b,z+30,db],tray);box([a,z+6,da],[b,z+30,da+4],tray);box([a,z+6,db-4],[b,z+30,db],tray);
    box([a+4,z+6,da+4],[b-4,z+22,db-4],soil);
    // Dense young seedlings with pale or pink stems and two opposing cotyledons.
-   for(let i=0;i<12;i++)for(let k=0;k<18;k++){
-    const seed=1+f*17000+t*2100+i*19+k,q=seedNoise(seed),q2=seedNoise(seed+13),q3=seedNoise(seed+37);
-    const x=a+10+(b-a-20)*(i+.2+q*.6)/12,d=da+10+(db-da-20)*(k+.2+q2*.6)/18;
+   for(let i=0;i<seedRows;i++)for(let k=0;k<seedCols;k++){
+    const seed=1+rack*91000+f*17000+t*2100+i*19+k,q=seedNoise(seed),q2=seedNoise(seed+13),q3=seedNoise(seed+37);
+    const x=a+10+(b-a-20)*(i+.2+q*.6)/seedRows,d=da+10+(db-da-20)*(k+.2+q2*.6)/seedCols;
     const h=48+q3*36,stemBase=[x,z+22,d],tip=[x+(q-.5)*13,z+22+h,d+(q2-.5)*13],purple=t===1;
     currentGroup=2000;const stem=selected?[.69,.76,.58]:purple?[.63,.29,.39]:[.70,.78,.48];
     cylinder(stemBase,tip,.65+q*.25,stem,0,4);
@@ -129,8 +135,10 @@ function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentG
    cylinder(at,add(at,mul(dir,12)),6,[.13,.21,.22],0,12);cylinder(add(at,mul(dir,12)),add(at,mul(dir,18)),8,[.84,.49,.16],0,12);
   }
  }
+ }
+ rackOX=0;
  // A soft-looking layered contact shadow beneath the frame.
- for(let layer=5;layer>=0;layer--){const shade=.045+layer*.007,ry=model.D*.6+layer*15,rx=model.W*.6+layer*20,y=-4-layer*.1;for(let i=0;i<64;i++){const a=i*Math.PI*2/64,b=(i+1)*Math.PI*2/64;tri([0,y,0],[rx*Math.cos(a),y,ry*Math.sin(a)],[rx*Math.cos(b),y,ry*Math.sin(b)],[0,1,0],[shade,shade+.025,shade+.035]);}}
+ for(let layer=5;layer>=0;layer--){const shade=.045+layer*.007,ry=model.D*.6+layer*15,rx=sceneW()*.5+model.W*.1+layer*20,y=-4-layer*.1;for(let i=0;i<64;i++){const a=i*Math.PI*2/64,b=(i+1)*Math.PI*2/64;tri([0,y,0],[rx*Math.cos(a),y,ry*Math.sin(a)],[rx*Math.cos(b),y,ry*Math.sin(b)],[0,1,0],[shade,shade+.025,shade+.035]);}}
  count=vertices.length/13;gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);vertices=[];render();
 }
 function multiply(a,b){const out=new Float32Array(16);for(let col=0;col<4;col++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)out[col*4+row]+=a[k*4+row]*b[col*4+k];return out;}
@@ -139,14 +147,14 @@ function bindGeometry(prog,geometry=buffer){gl.useProgram(prog);gl.bindBuffer(gl
 function makeCamera(aspect){
  const near=1,far=50000,height=Math.max(model.top+values.od*2+(values.trays?100:0),...((model.equipment?.nozzles||[]).map(n=>n.at.z+20))),target=[0,height*.48,0];let eye,projection,up=[0,1,0];
  if(viewMode==='iso'){
-  const fov=.66,f=1/Math.tan(fov/2),radius=Math.hypot(model.W,height,model.D)/2,distance=radius/Math.sin(Math.min(fov/2,Math.atan(Math.tan(fov/2)*aspect)))*1.03*zoom;
+  const fov=.66,f=1/Math.tan(fov/2),radius=Math.hypot(sceneW(),height,model.D)/2,distance=radius/Math.sin(Math.min(fov/2,Math.atan(Math.tan(fov/2)*aspect)))*1.03*zoom;
   projection=new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0]);
   eye=add(target,[distance*Math.sin(yaw)*Math.cos(pitch),distance*Math.sin(pitch),distance*Math.cos(yaw)*Math.cos(pitch)]);
  }else{
-  const visibleW=(viewMode==='side'?model.D:model.W)+values.od*3,visibleH=viewMode==='top'?model.D+values.od*3:height+30;
+  const visibleW=(viewMode==='side'?model.D:sceneW())+values.od*3,visibleH=viewMode==='top'?model.D+values.od*3:height+30;
   const hh=Math.max(visibleH/2,visibleW/(2*aspect))*1.14*zoom,hw=hh*aspect;
   projection=new Float32Array([1/hw,0,0,0,0,1/hh,0,0,0,0,-2/(far-near),0,0,0,-(far+near)/(far-near),1]);
-  const distance=Math.max(model.W,model.D,height)*3+1000;
+  const distance=Math.max(sceneW(),model.D,height)*3+1000;
   if(viewMode==='front')eye=add(target,[0,0,distance]);
   else if(viewMode==='side')eye=add(target,[distance,0,0]);
   else{eye=add(target,[0,distance,0]);up=[0,0,-1];}
@@ -163,28 +171,28 @@ function drawEffects(){
  if(!fanOn&&!lightOn&&!waterOn)return;
  const time=reducedMotion.matches?0:performance.now()/1000;
  currentID=0;currentGroup=0;vertices=[];
- if(fanOn)for(const fan of eq.fans){
+ if(fanOn)for(const ox of rackOffsets())for(const fan of eq.fans){rackOX=ox;
   const [x,y,z]=world(fan.at);
   for(let i=0;i<7;i++){const a=i*Math.PI*2/7+time*14,pt=(r,t)=>[x+5,y+Math.sin(t)*r,z-Math.cos(t)*r];quad(pt(12,a),pt(49,a+.23),pt(47,a+.67),pt(16,a+.52),[1,0,0],[.32,.36,.36]);}
  }
  uploadEffects(1);
  if(lightOn){
-  for(const led of eq.lights){const a=world(led.a),b=world(led.b),shelf=model.shelfRects.find(s=>s.f+1===led.shelf);if(!shelf)continue;const y=shelf.z+values.od/2+105;
-   const x0=Math.max(-model.W/2,a[0]),x1=Math.min(model.W/2,b[0]),spread=model.rowD/(eq.lightRows+1)*.45;
+  for(const ox of rackOffsets())for(const led of eq.lights){rackOX=ox;const a=world(led.a),b=world(led.b),shelf=model.shelfRects.find(s=>s.f+1===led.shelf);if(!shelf)continue;const y=shelf.z+values.od/2+105;
+   const x0=Math.max(rackOX-model.W/2,a[0]),x1=Math.min(rackOX+model.W/2,b[0]),spread=model.rowD/(eq.lightRows+1)*.45;
    quad([x0,a[1]-16,a[2]],[x1,a[1]-16,a[2]],[x1,y,a[2]+spread],[x0,y,a[2]+spread],[0,1,0],[1,.96,.60]);
    quad([x0,a[1]-16,a[2]],[x1,a[1]-16,a[2]],[x1,y,a[2]-spread],[x0,y,a[2]-spread],[0,1,0],[1,.96,.60]);
    quad([x0,y,a[2]-spread],[x1,y,a[2]-spread],[x1,y,a[2]+spread],[x0,y,a[2]+spread],[0,1,0],[1,.96,.65]);
   }
   uploadEffects(.12);
  }
- if(fanOn){for(const fan of eq.fans){const a=world(fan.at),shelf=model.shelfRects.find(s=>s.f+1===fan.shelf);if(!shelf)continue;
+ if(fanOn){for(const ox of rackOffsets())for(const fan of eq.fans){rackOX=ox;const a=world(fan.at),shelf=model.shelfRects.find(s=>s.f+1===fan.shelf);if(!shelf)continue;
   for(let lane=0;lane<3;lane++)for(let pulse=0;pulse<3;pulse++){
    const t=(time*.24+pulse/3+lane*.09)%1,point=u=>[a[0]+35+u*(model.W-35),a[1]+(shelf.z+values.od/2+125-a[1])*(1-Math.exp(-u*5)),a[2]+(lane-1)*24+Math.sin(u*8+lane)*7];
    const end=Math.min(1,t+.08),b=point(end);cylinder(point(t),b,1.8,[.24,.73,.85],0,5);cylinder(b,add(b,[-12,5,6]),1.6,[.24,.73,.85],0,5);cylinder(b,add(b,[-12,-5,-6]),1.6,[.24,.73,.85],0,5);
   }
  }uploadEffects(.65);}
  if(waterOn){
-  for(const nozzle of eq.nozzles){
+  for(const ox of rackOffsets())for(const nozzle of eq.nozzles){rackOX=ox;
    const origin=world(nozzle.at),target=world(nozzle.target),direction=norm(sub(target,origin));
    const start=add(origin,mul(direction,18));
    // Individual droplets fan out from the actual nozzle tip into its own tray.
@@ -200,6 +208,7 @@ function drawEffects(){
   }
   uploadEffects(.78);
  }
+ rackOX=0;
  if((fanOn||waterOn)&&!reducedMotion.matches&&!document.hidden&&!effectFrame)effectFrame=requestAnimationFrame(()=>{effectFrame=0;if(canvas.getBoundingClientRect().width&&canvas.getBoundingClientRect().height)render();});
 }
 function uploadEffects(alpha){if(!vertices.length)return;gl.bindBuffer(gl.ARRAY_BUFFER,effectBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);bindGeometry(program,effectBuffer);gl.uniform1f(gl.getUniformLocation(program,'uAlpha'),alpha);if(alpha<1){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);}gl.drawArrays(gl.TRIANGLES,0,vertices.length/13);gl.depthMask(true);gl.disable(gl.BLEND);vertices=[];}

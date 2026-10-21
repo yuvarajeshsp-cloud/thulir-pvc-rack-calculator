@@ -49,17 +49,18 @@
  $('catalogueRows').addEventListener('input',event=>{const input=event.target;if(!input.hasAttribute('data-rate'))return;const id=input.closest('tr').dataset.id;state.prices[id]=input.value===''?'':num(input.value);state.priceOverrides[id]=true;save();render();catalogueStatus();const cell=input.closest('tr').lastElementChild;if(cell)cell.innerHTML=priceBasis({id});});
  const fields={quoteCustomer:'customer',quoteReference:'reference',quoteNotes:'notes',quoteDiscount:'discount',quoteTax:'tax',configProfit:'profit',configInstallation:'installation'};
  for(const [id,key]of Object.entries(fields)){$(id).value=state[key];$(id).addEventListener('input',()=>{state[key]=['discount','tax','profit','installation'].includes(key)?num($(id).value):$(id).value;if(key==='tax')state.tax=Math.min(100,state.tax);if(key==='profit')state.profit=Math.min(1000,state.profit);save();if(key==='profit'||key==='installation')render();else totals();});}
- $('quoteRackQuantity').value=state.rackQuantity;
- $('quoteRackQuantity').addEventListener('input',()=>{state.rackQuantity=window.RackQuoteMath.quantity($('quoteRackQuantity').value);save();render();});
- $('quoteRackQuantity').addEventListener('change',()=>{$('quoteRackQuantity').value=state.rackQuantity;});
+ // The rack quantity is set on Configure; this field edits the same value.
+ const rackQuantity=()=>window.RackQuoteMath.quantity(current?.values.racks??state.rackQuantity);
+ $('quoteRackQuantity').addEventListener('input',()=>{const q=window.RackQuoteMath.quantity($('quoteRackQuantity').value),racks=document.getElementById('racks');if(racks&&racks.dispatchEvent){racks.value=q;racks.dispatchEvent(new Event('input',{bubbles:true}));}else{state.rackQuantity=q;save();render();}});
+ $('quoteRackQuantity').addEventListener('change',()=>{$('quoteRackQuantity').value=rackQuantity();});
  function save(){try{localStorage.setItem('thulirEstimateV1',JSON.stringify(state));}catch(_){}}
- let current=window.currentRack,rows=[];
+ let current=window.currentRack,rows=[];$('quoteRackQuantity').value=rackQuantity();
  function getRows(){
   const bill=(current?.model.equipment.bill||[]).filter(row=>isCorePrice(row.id));
   if(current?.values.irrigation)bill.push({id:'driptotal',label:'Drip irrigation · total rack cost',qty:1,unit:'system'});
   return [...bill,...state.extra.map(item=>({...item,custom:true}))];
  }
- function summary(){return window.RackQuoteMath.calculate({rows:getRows(),prices:state.prices,profit:state.profit,installation:state.installation,rackQuantity:state.rackQuantity,discount:state.discount,tax:state.tax});}
+ function summary(){return window.RackQuoteMath.calculate({rows:getRows(),prices:state.prices,profit:state.profit,installation:state.installation,rackQuantity:rackQuantity(),discount:state.discount,tax:state.tax});}
  function lineQuantity(row,s){return row.custom?`${row.totalQty} ${esc(row.unit)} · estimate-wide`:`${row.perRackQty} × ${s.quantity} = ${row.totalQty} ${esc(row.unit)}`;}
  function render(){const s=summary();rows=s.lines;$('priceRows').innerHTML=rows.map(row=>`<tr data-id="${esc(row.id)}"><td data-label="Component">${row.custom?`<input data-field="label" aria-label="Additional cost description" maxlength="160" value="${esc(row.label)}">`:esc(row.label)}</td><td data-label="Quantity">${row.custom?`<input data-field="qty" aria-label="Estimate-wide quantity" type="number" min="0" step=".01" value="${row.perRackQty}"><small>Estimate-wide · not multiplied</small>`:lineQuantity(row,s)}</td><td data-label="Selling unit price">${row.custom?`<input data-field="price" aria-label="Additional cost unit price" type="number" min="0" step=".01" placeholder="Enter price" value="${esc(state.prices[row.id]??'')}">`:row.unpriced?'Unpriced':money(row.unitRate)}</td><td data-label="Amount" class="row-amount">${row.unpriced?'Unpriced':money(row.amount)}</td><td>${row.custom?'<button data-remove aria-label="Remove additional cost">×</button>':''}</td></tr>`).join('');totals();}
  function issues(){const result=[],m=current?.model,v=current?.values;if(!m)return ['Rack not loaded'];const unreviewed=getRows().filter(researched).length;if(unreviewed)result.push(`${unreviewed} researched/default prices need supplier confirmation`);if(v.insert>Math.min(v.c3,v.c4,v.c5))result.push('Socket insertion exceeds fitting dimensions');if(!v.confirmed)result.push('Fitting measurements are provisional');if(m.tooLong.length||m.cuts.some(p=>p.cut<=0))result.push('Resolve pipe-cut / stock-length errors');result.push(...m.equipment.warnings);return result;}
@@ -67,7 +68,7 @@
  $('priceRows').addEventListener('input',event=>{const input=event.target,field=input.dataset.field,tr=input.closest('tr');if(!field||!tr)return;const id=tr.dataset.id;if(field==='price'){state.prices[id]=input.value===''?'':num(input.value);state.priceOverrides[id]=true;}else{const item=state.extra.find(r=>r.id===id);if(item)item[field]=field==='qty'?num(input.value):input.value;}save();const row=summary().lines.find(r=>r.id===id);tr.querySelector('.row-amount').textContent=row.unpriced?'Unpriced':money(row.amount);totals();});
  $('priceRows').addEventListener('click',event=>{if(!event.target.closest('[data-remove]'))return;const id=event.target.closest('tr').dataset.id;state.extra=state.extra.filter(r=>r.id!==id);delete state.prices[id];save();render();renderCatalogue();});
  $('addQuoteItem').onclick=()=>{state.extra.push({id:'custom-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),label:'Additional cost',qty:1,unit:'each'});save();render();renderCatalogue();$('priceRows').lastElementChild.querySelector('input').focus();};
- window.addEventListener('rackchange',event=>{current=event.detail;rememberStock();seedPrices();render();renderCatalogue();});
+ window.addEventListener('rackchange',event=>{current=event.detail;state.rackQuantity=rackQuantity();if(document.activeElement!==$('quoteRackQuantity'))$('quoteRackQuantity').value=state.rackQuantity;rememberStock();seedPrices();render();renderCatalogue();});
  function rememberStock(){state.stockCatalogue=state.stockCatalogue||{};for(const row of current?.model.equipment.bill||[])if(row.id.startsWith('stock-')&&!window.RackQuoteMath.obsoleteStock(row.id,row.label))state.stockCatalogue[row.id]={id:row.id,label:row.label,unit:row.unit};save();}
  $('printEstimate').onclick=()=>{
   if(!current)return;const {model:m,values:v}=current,s=summary(),warnings=issues();if(s.missing)warnings.unshift(`${s.missing} unpriced items — incomplete estimate`);
