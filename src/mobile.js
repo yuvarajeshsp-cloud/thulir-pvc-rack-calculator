@@ -9,6 +9,11 @@ if(Capacitor.isNativePlatform()){
   try {const {uri}=await Filesystem.writeFile({path:name,data,directory:Directory.Cache,encoding:Encoding.UTF8});await Share.share({title:name,files:[uri],dialogTitle:'Save or share your rack file'});}
   catch(e){if(!/cancel/i.test(String(e?.message)))alert('Could not share this file. Please try again.');}
  };
+ // Binary files such as PDFs arrive base64-encoded.
+ window.shareRackBinary=async(name,base64)=>{
+  try {const {uri}=await Filesystem.writeFile({path:name,data:base64,directory:Directory.Cache});await Share.share({title:name,files:[uri],dialogTitle:'Save or share your PDF'});}
+  catch(e){if(!/cancel/i.test(String(e?.message)))alert('Could not share this file. Please try again.');}
+ };
  document.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(a&&/^https?:/.test(a.href)){e.preventDefault();Browser.open({url:a.href}).catch(()=>alert('Could not open this link.'));}});
  window.print=async()=>{
   const estimate=document.body.classList.contains('printing-estimate');
@@ -24,6 +29,7 @@ if(Capacitor.isNativePlatform()){
  document.getElementById('print').textContent='Share build list';
  const estimateButton=document.getElementById('printEstimate');if(estimateButton)estimateButton.textContent='Share printable estimate';
  App.addListener('backButton',()=>{
+  const preview=document.querySelector('dialog.pdf-preview[open]');if(preview){preview.close();return;}
   const close=document.querySelector('.inspect-close');if(close){close.click();return;}
   if(document.body.classList.contains('rack-fullscreen')){document.querySelector('.fullscreenToggle').click();return;}
   const configure=document.querySelector('[data-page="configurePage"]');

@@ -161,7 +161,9 @@ function makeCamera(aspect){
  }
  return{matrix:multiply(projection,camera(eye,target,up)),eye};
 }
-function render(){if(!model||canvas.hidden)return;const dpr=Math.min(window.devicePixelRatio||1,2),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(!w||!h)return;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);bindGeometry(program);cameraState=makeCamera(w/h);
+// A snapshot renders at a fixed pixel size, even while the 3D page is hidden.
+let forcedSize=null;
+function render(){if(!model||(canvas.hidden&&!forcedSize))return;const dpr=Math.min(window.devicePixelRatio||1,2),w=forcedSize?forcedSize.w:Math.round(canvas.clientWidth*dpr),h=forcedSize?forcedSize.h:Math.round(canvas.clientHeight*dpr);if(!w||!h)return;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);bindGeometry(program);cameraState=makeCamera(w/h);
  gl.uniform1f(gl.getUniformLocation(program,'uLightOn'),values.lights&&values.lightsOn&&model.layout==='vertical'?1:0);gl.uniform1f(gl.getUniformLocation(program,'uAlpha'),1);gl.uniformMatrix4fv(gl.getUniformLocation(program,'uMatrix'),false,cameraState.matrix);gl.uniform3fv(gl.getUniformLocation(program,'uEye'),cameraState.eye);gl.uniform3fv(gl.getUniformLocation(program,'uHover'),encode(hoverID));gl.uniform1f(gl.getUniformLocation(program,'uHoverActive'),hoverID?1:0);gl.uniform1f(gl.getUniformLocation(program,'uHoverGroup'),hoverGroup);gl.drawArrays(gl.TRIANGLES,0,count);drawEffects();
 }
 // Small dynamic buffer: the crop and frame stay on the GPU while accessories animate.
@@ -276,5 +278,23 @@ function updatePrefs(){hoverFittings=fittingToggle.checked;hoverPipes=pipeToggle
 fittingToggle.addEventListener('change',updatePrefs);pipeToggle.addEventListener('change',updatePrefs);
 document.addEventListener('pointerover',e=>{const row=e.target.closest('[data-pipe-name],[data-fitting-type]');if(!row)return;const g=row.dataset.pipeName?(hoverPipes?groups.get(row.dataset.pipeName+':'+row.dataset.pipeCut):0):(hoverFittings?1000+Number(row.dataset.fittingType):0);if(g){hideTooltip();hoverGroup=g;render();}});
 document.addEventListener('pointerout',e=>{const row=e.target.closest('[data-pipe-name],[data-fitting-type]');if(row&&!row.contains(e.relatedTarget)){hoverGroup=0;render();}});
-window.PVCViewer={available:true,update(m,v,h,mode='iso'){if(viewMode!==mode){viewMode=mode;zoom=1;hideTooltip();hoverGroup=0;}canvas.style.cursor=viewMode==='iso'?'grab':'crosshair';if(m!==model||h!==selected){model=m;values=v;selected=h;build();}else render();}};
+// Images of the current rack for the PDF: each view drawn and read back in the same task, then the on-screen view restored.
+function snapshot(views=[['iso',1500,820],['front',900,675],['side',900,675],['top',900,675]]){
+ if(!model)return {};
+ const saved={viewMode,zoom,hoverID,hoverGroup},out={};
+ // A long row of racks leaves empty space in the wide 3D frame, so move closer; a single tall rack keeps the full view.
+ const wide=sceneW()/Math.max(model.top,1),fill=wide>1.6?.74:wide>1?.88:1;
+ hoverID=0;hoverGroup=0;
+ try{
+  for(const [mode,w,h] of views){
+   viewMode=mode;zoom=mode==='iso'?Math.min(zoom,1)*fill:1;forcedSize={w,h};render();
+   const shot=document.createElement('canvas');shot.width=w;shot.height=h;const g=shot.getContext('2d');
+   const bg=g.createRadialGradient(w*.4,h*.3,0,w*.5,h*.5,Math.max(w,h)*.75);bg.addColorStop(0,'#2b3b3d');bg.addColorStop(1,'#141e21');
+   g.fillStyle=bg;g.fillRect(0,0,w,h);g.drawImage(canvas,0,0,w,h);out[mode]=shot.toDataURL('image/jpeg',.9);
+   zoom=saved.zoom;
+  }
+ }finally{forcedSize=null;viewMode=saved.viewMode;zoom=saved.zoom;hoverID=saved.hoverID;hoverGroup=saved.hoverGroup;render();}
+ return out;
+}
+window.PVCViewer={available:true,snapshot,update(m,v,h,mode='iso'){if(viewMode!==mode){viewMode=mode;zoom=1;hideTooltip();hoverGroup=0;}canvas.style.cursor=viewMode==='iso'?'grab':'crosshair';if(m!==model||h!==selected){model=m;values=v;selected=h;build();}else render();}};
 })();
