@@ -1,19 +1,22 @@
-/* Research reviewed 16 October 2026. Budget inputs, not live supplier quotations. */
+/* Research reviewed 16 October 2026; Thulir's own supplier prices added 23 October 2026. Editable defaults, not live quotations. */
 (function(root){
 const data={
- 'stock-6.096':[650,'Allowance','Reference: Ashirvad 1-inch SCH40, 6 m at ₹542 before GST. ₹650 is a rounded purchase-cost allowance for 20 ft, not a listed 20 ft price. 6 m is only 19 ft 8.22 in; confirm actual stock length before cutting.','https://www.artradingcompany.com/products/ashirvad-upvc-pipe-sch40-6m-1'],
- joint3:[110,'Listed / pack conversion','Vikon 1-inch 3-way: ₹220 for 2 pieces = ₹110 each. Listed pack tax-inclusive price; shipping extra.','https://vikon.in/index.php?product_id=1108&route=product/product'],
- joint4:[120,'Listed / pack conversion','Vikon 1-inch side-outlet 4-way: ₹240 for 2 pieces = ₹120 each. This is the corner side-outlet connector, not the flat cross.','https://vikon.in/index.php?product_id=1110&route=product/product'],
- joint5:[140,'Listed','Vikon 1-inch 5-way ₹140 each; listed as pre-order with advance payment. Confirm availability and shipping.','https://vikon.in/index.php?product_id=1111&route=product/product'],
+ 'stock-6.096':[350,'Your supplier price','1-inch PVC pipe, 20 ft length: Thulir actual component price ₹350, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ joint3:[19,'Your supplier price','1-inch 3-way PVC fitting: Thulir actual component price ₹19, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ jointT:[13,'Your supplier price','1-inch PVC equal tee: Thulir actual component price ₹13, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ jointX:[22,'Your supplier price','1-inch PVC cross T: Thulir actual component price ₹22, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ joint4:[37,'Your supplier price','1-inch 4-way side-outlet PVC fitting: Thulir actual component price ₹37, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ joint5:[54,'Your supplier price','1-inch 5-way PVC fitting: Thulir actual component price ₹54, updated 23 Oct 2026.',null,'23 Oct 2026'],
  plug:[25,'Allowance','Planning allowance for a socket-fitting plug. A pipe end cap is a different fitting; match the actual socket. No exact supplier quote verified.',null],
- footcap:[24,'Listed','Mykit Star 1-inch UPVC end cap ₹24 inclusive of taxes. Confirm pipe fit.','https://mykit.in/star-upvc-end-cap-25-mm-1-inch'],
+ driptotal:[1200,'Your supplier price','Drip irrigation, total per rack: Thulir actual component price ₹1200, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ footcap:[17,'Your supplier price','1-inch PVC end cap: Thulir actual component price ₹17, updated 23 Oct 2026.',null,'23 Oct 2026'],
  mesh:[200,'Derived allowance','2 × 4 ft panel: Chennai supplier reference ₹15/sq ft × 8 = ₹120; ₹80 allowed for small-quantity cutting/finishing. ₹200 total is a budget, not a panel quote. Confirm gauge and support.','https://www.wiremeshindustries.com/weld-mesh.html'],
  tray:[175,'Pack conversion','Microgreen Studio 1020 tray set ₹350, with-hole + without-hole. Budget allocation ₹175 per physical tray; supplier sells the set. Four physical trays per shelf in this calculator; add additional bottom trays if required.','https://microgreenstudio.com/products/microgreens-growing-tray'],
- fan:[599,'Listed','POWERX 120 × 120 × 25 mm, 12 V, 7-blade fan ₹599. Tax treatment and delivery need checkout confirmation.','https://www.power-x.in/products/powerx-120mm-7-blade-normal-cooling-fan-black'],
+ fan:[300,'Your supplier price','120 mm PC fan: Thulir actual component price ₹300, updated 23 Oct 2026.',null,'23 Oct 2026'],
  fanmount:[50,'Allowance','₹50 per locally made fan bracket and fasteners. Fabrication allowance; no exact matching supplier quote.',null],
  fanpower:[750,'Derived allowance','Reference adapter: Robocraze 12 V 5 A ₹549 incl. GST, shown out of stock. ₹201 allowed for distribution/connectors. Confirm supply capacity for actual fan load; not a verified kit quote.','https://robocraze.com/products/12v-5a-60w-smps-ac-dc-power-supply-adapter'],
- led2:[800,'Historical benchmark','2 ft Fluortronix two-pack recorded at ₹1,475 on 25 Jul 2025 (₹737.50 each). ₹800 each is a rounded budget; current seller price not verified.','https://price-history.in/product/fluortronix-high-efficiency-blooming-white-plant-aYGiZmmb'],
- led4:[1000,'Historical benchmark','4 ft Fluortronix two-pack recorded at ₹1,875 on 25 Sep 2025 (₹937.50 each). ₹1,000 each is a rounded budget; current seller price not verified.','https://price-history.in/product/fluortronix-blooming-white-4ft-20w-plant-UzCFZkmb'],
+ led2:[130,'Your supplier price','2 ft LED grow light: Thulir actual component price ₹130, updated 23 Oct 2026.',null,'23 Oct 2026'],
+ led4:[150,'Your supplier price','4 ft LED grow light: Thulir actual component price ₹150, updated 23 Oct 2026.',null,'23 Oct 2026'],
  lightclips:[20,'Allowance','₹20 per pair of mounting clips/fasteners. Set to zero if the selected LED package includes suitable clips.',null],
  lightchannel:[150,'Allowance','₹150 per 4 ft mounting channel, material plus cutting. Local fabrication budget; confirm dimensions and rate.',null],
  lightpower:[1000,'Allowance','₹1,000 for a light timer, plugs and distribution enclosure. Budget only; assumes lights with integrated drivers. Add a suitable external driver if required.',null],
@@ -33,7 +36,7 @@ function get(id,v={width:4,depth:2}){
  if(!entry)return null;
  if(id==='mesh')factor=v.width*v.depth/8;
  if(id==='lightchannel')factor=v.width/4;
- return {value:Math.round(entry[0]*factor*100)/100,kind:entry[1],note:entry[2]+(Math.abs(factor-1)>.0001?' Initial allowance scaled to the configured length/area; confirm actual supplier rate.':''),url:entry[3],reviewed:'16 Oct 2026'};
+ return {value:Math.round(entry[0]*factor*100)/100,kind:entry[1],note:entry[2]+(Math.abs(factor-1)>.0001?' Initial allowance scaled to the configured length/area; confirm actual supplier rate.':''),url:entry[3],reviewed:entry[4]||'16 Oct 2026'};
 }
 const api={get,ids:Object.keys(data)};if(typeof module!=='undefined')module.exports=api;else root.RackPriceDefaults=api;
 })(typeof window==='undefined'?globalThis:window);

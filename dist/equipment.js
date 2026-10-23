@@ -42,13 +42,14 @@ function equipment(m,v){
   const {a,b}=segment;
   if(a.x!==m.W||b.x!==m.W)continue;
   const main=vertical?(a.y===m.D&&b.y===m.D&&a.z!==b.z):
-   (segment.name==='Depth rail'||segment.name==='Step riser'||(segment.name==='Bottom leg'&&a.y===m.D));
+   (segment.name==='Depth rail'||segment.name==='Depth half-rail'||segment.name==='Step riser'||(segment.name==='Bottom leg'&&a.y===m.D));
   if(main)route(water,p(a.x+offset,a.y+offset,a.z),p(b.x+offset,b.y+offset,b.z));
  }
  const length=list=>list.reduce((n,s)=>n+Math.hypot(s.a.x-s.b.x,s.a.y-s.b.y,s.a.z-s.b.z),0);
  const bill=[],add=(id,label,qty,unit='each')=>{if(qty>0)bill.push({id,label,qty,unit});};
  add('stock-'+v.stock,`PVC stock pipe · ${Number((v.stock/0.3048).toFixed(2))} ft`,m.bins.length,'length');
  for(const t of [3,4,5])add('joint'+t,t+'-way PVC fitting',m.counts[t]);
+ add('jointT','PVC T joint (equal tee)',m.counts[6]||0);add('jointX','PVC cross T joint',m.counts[7]||0);
  add('plug','Top socket plug',m.caps);add('footcap','Post foot / end cap',m.posts);add('mesh','Mesh shelf panel · cut to shelf size',m.growingShelves);
  add('tray','Growing tray (4 per shelf)',m.growingShelves*4);
  add('fan','120 mm PC fan',fans.length);add('fanmount','120 mm fan mounting bracket',fans.length);

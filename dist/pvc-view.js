@@ -15,7 +15,7 @@ const tooltip=document.getElementById('rackTooltip');let hoverFittings=true,hove
 try{const prefs=JSON.parse(localStorage.getItem('thulirInspectV1')||'null');if(prefs){hoverFittings=prefs.fittings!==false;hoverPipes=prefs.pipes!==false;}}catch(e){}
 const add=(a,b)=>a.map((n,i)=>n+b[i]),sub=(a,b)=>a.map((n,i)=>n-b[i]),mul=(a,k)=>a.map(n=>n*k),dot=(a,b)=>a.reduce((s,n,i)=>s+n*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>mul(a,1/(Math.hypot(...a)||1));
 let vertices=[],count=0,model=null,values=null,selected=0,yaw=.65,pitch=.24,zoom=1;
-const white=[.94,.95,.91],sleeve=[.965,.968,.94],seam=[.70,.74,.69],jointColors={3:[.83,.5,.22],4:[.26,.52,.43],5:[.45,.52,.72]};
+const white=[.94,.95,.91],sleeve=[.965,.968,.94],seam=[.70,.74,.69],jointColors={3:[.83,.5,.22],4:[.26,.52,.43],5:[.45,.52,.72],6:[.72,.34,.48],7:[.54,.43,.18]};
 let meshTransform=null;
 function vertex(p,n,c){if(meshTransform){[p,n]=meshTransform(p,n);}vertices.push(...p,...n,...c,...encode(currentID),currentGroup);}
 function tri(a,b,c,n,col){vertex(a,n,col);vertex(b,n,col);vertex(c,n,col);}
@@ -235,7 +235,7 @@ function pickAt(clientX,clientY,radiusCSS=0){
 function hideTooltip(){hoverID=0;pinned=false;tooltip.hidden=true;tooltip.classList.remove('pinned');}
 function showAt(x,y,pin=false,radius=0){const id=pickAt(x,y,radius),obj=objects.get(id),changed=id!==hoverID||pin!==pinned;hoverID=id;hoverGroup=0;pinned=pin&&!!obj;tooltip.classList.toggle('pinned',pinned);if(!obj){tooltip.hidden=true;if(changed)render();return;}
  const length=n=>window.feetInches?window.feetInches(n):`${(n/25.4).toFixed(2)} in`;
- const title=obj.kind==='pipe'?obj.label:`${obj.type}-way ${obj.type===3?'corner elbow':obj.type===4?'side-outlet tee':'centre fitting'}`;
+ const title=obj.kind==='pipe'?obj.label:({3:'3-way corner elbow',4:'4-way side-outlet tee',5:'5-way centre fitting',6:'T joint',7:'Cross T joint'})[obj.type];
  const detail=obj.kind==='pipe'?`Cut length: ${length(obj.cut)}`:`${model.layout==='step'?'Step':'Frame'} ${obj.frame} · ${model.counts[obj.type]} of this fitting in rack`;
  if(changed||tooltip.hidden)tooltip.innerHTML=`${pinned?'<button type="button" class="inspect-close" aria-label="Close part details">×</button>':''}<span class="inspect-code">${obj.code} / ${obj.kind==='pipe'?'PIPE CUT':'FITTING'}</span><strong>${title}</strong><span>${detail}</span>${obj.kind==='pipe'?`<small>${values.confirmed?'Measured fitting inputs':'Provisional — measure sockets before cutting'}</small>`:''}${pinned?'<small>Tap another part to inspect it.</small>':''}`;
  tooltip.hidden=false;const rect=canvas.getBoundingClientRect(),stage=canvas.parentElement.getBoundingClientRect();const localX=x-stage.left,localY=y-stage.top;
