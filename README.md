@@ -8,7 +8,7 @@ Interactive microgreen rack planner with realistic 3D views, vertical and steppe
 python3 -m http.server 8000 --directory dist
 ```
 
-Open http://localhost:8000. No build step is required. Pushes to `main` publish `www/` to GitHub Pages at https://yuvarajeshsp-cloud.github.io/thulir-pvc-rack-calculator/ (see `.github/workflows/pages.yml`). `www/` also works on any other static web host; `www/mobile.js` only activates inside the native app.
+Open http://localhost:8000. No build step is required. Pushes to `main` publish `www/` to GitHub Pages at https://yuvarajeshsp-cloud.github.io/thulir-pvc-rack-calculator/ (see `.github/workflows/pages.yml`). `netlify.toml` lets Netlify deploy the same folder: import the repository in Netlify and it picks up the settings. `www/` also works on any other static web host; `www/mobile.js` only activates inside the native app.
 
 Settings and customer details are stored in your browser, not synced between devices. Prices are editable budget references. Verify physical fitting dimensions before construction; effects are illustrative.
 
