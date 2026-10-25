@@ -1,5 +1,16 @@
 /* Geometry and bill of materials share these exact accessory routes. Millimetres internally. */
 (function(root){
+// Conservative rectangular purchase layout; offcut reuse is not assumed.
+function shelfBasePlan(m,v){
+ const W=Math.max(1,m.W),D=Math.max(1,m.rowD),shelves=m.growingShelves;
+ if(v.shelfBase!=='drain')return {type:'mesh',cols:1,rows:1,perShelf:1,total:shelves,panelW:W,panelD:D};
+ const candidates=[[508,254],[254,508]].map(([panelW,panelD])=>{
+  const cols=Math.ceil(W/panelW),rows=Math.ceil(D/panelD);
+  return {type:'drain',cols,rows,panelW,panelD,perShelf:cols*rows,total:cols*rows*shelves,overage:cols*panelW*rows*panelD-W*D};
+ });
+ candidates.sort((a,b)=>a.perShelf-b.perShelf||a.overage-b.overage);
+ return candidates[0];
+}
 function equipment(m,v){
  const vertical=m.layout==='vertical',fans=[],lights=[],water=[],cables=[],nozzles=[],lightSupports=[];
  const fanCount=vertical&&v.fans?Math.max(1,Math.min(4,Math.round(v.fansPerShelf))):0;
@@ -46,11 +57,14 @@ function equipment(m,v){
   if(main)route(water,p(a.x+offset,a.y+offset,a.z),p(b.x+offset,b.y+offset,b.z));
  }
  const length=list=>list.reduce((n,s)=>n+Math.hypot(s.a.x-s.b.x,s.a.y-s.b.y,s.a.z-s.b.z),0);
+ const shelfBase=shelfBasePlan(m,v);
  const bill=[],add=(id,label,qty,unit='each')=>{if(qty>0)bill.push({id,label,qty,unit});};
  add('stock-'+v.stock,`PVC stock pipe · ${Number((v.stock/0.3048).toFixed(2))} ft`,m.bins.length,'length');
  for(const t of [3,4,5])add('joint'+t,t+'-way PVC fitting',m.counts[t]);
  add('jointT','PVC T joint (equal tee)',m.counts[6]||0);add('jointX','PVC cross T joint',m.counts[7]||0);
- add('plug','Top socket plug',m.caps);add('footcap','Post foot / end cap',m.posts);add('mesh','Mesh shelf panel · cut to shelf size',m.growingShelves);
+ add('plug','Top socket plug',m.caps);add('footcap','Post foot / end cap',m.posts);
+ if(shelfBase.type==='drain')add('draincell','Drain cell panel · 20 × 10 in, trim to fit',shelfBase.total,'panel');
+ else add('mesh','Wire mesh shelf panel · cut to shelf size',m.growingShelves,'panel');
  add('tray','Growing tray (4 per shelf)',m.growingShelves*4);
  add('fan','120 mm PC fan',fans.length);add('fanmount','120 mm fan mounting bracket',fans.length);
  add('led'+v.ledFeet,v.ledFeet+' ft LED grow light',lights.length);add('lightclips','LED mounting clip pair',lights.length,'pair');add('lightchannel','Full-width LED mounting channel',lightSupports.length,'length');
@@ -62,11 +76,15 @@ function equipment(m,v){
  add('tube','Irrigation tubing allowance (+10%)',Math.ceil(length(water)*1.1/304.8),'ft');
  if(nozzles.length){add('watertee','Irrigation branch tee',m.growingShelves*5);add('watercap','Irrigation line end plug',m.growingShelves+1);add('valve','Shelf flow-control valve',m.growingShelves);add('waterclips','Tubing support clips',water.reduce((n,line)=>n+Math.max(1,Math.ceil(Math.hypot(line.a.x-line.b.x,line.a.y-line.b.y,line.a.z-line.b.z)/250)),0));add('irrigationsource','Water supply kit: filter, regulator, inlet & timer',1,'kit');}
  const warnings=[];
+ if(shelfBase.type==='drain'){
+  warnings.push('Drain-cell panel counts assume a rectangular grid with edge trimming; confirm actual interior opening, offcut reuse, fastening and wet-tray load capacity.');
+  if(!v.trayRail||!v.center)warnings.push('Drain cells need secure support: enable the tray support rail and centre supports, or add appropriately sized independent supports.');
+ }
  if(lights.length&&perRow*ledLength>m.W+.1)warnings.push('Whole LED fixtures overhang this rack width. Adjust the width or light length for an exact fit.');
  if(fans.length&&m.rowD/(fanCount+1)<130)warnings.push('Fans are too close along the left side. Reduce fans per shelf or increase rack depth.');
  if(fans.length&&m.P<220)warnings.push('Shelf spacing is too tight for the illustrated fan and crop clearance.');
  if(nozzles.length&&m.layout==='vertical'&&m.P<210)warnings.push('Increase shelf spacing for the sprinkler branches and crops.');
- return{fans,lights,lightSupports,water,cables,nozzles,bill,warnings,waterOffset:offset,lightsPerRow:perRow,lightRows:lightCount};
+ return{fans,lights,lightSupports,water,cables,nozzles,bill,warnings,shelfBase,waterOffset:offset,lightsPerRow:perRow,lightRows:lightCount};
 }
 if(typeof module!=='undefined')module.exports=equipment;else root.buildEquipment=equipment;
 })(typeof window==='undefined'?globalThis:window);
