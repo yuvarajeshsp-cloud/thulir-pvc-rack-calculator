@@ -101,8 +101,9 @@ function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentG
    for(let x=x0;x<=x1+1;x+=m.W/Math.ceil(m.W/48))cylinder([x,z,d0],[x,z,d1],1.3,wire,0,6);
    for(let d=d0;d<=d1+1;d+=m.rowD/Math.ceil(m.rowD/48))cylinder([x0,z+1,d],[x1,z+1,d],1.3,wire,0,6);
   }
-  if(v.trays){for(let t=0;t<4;t++){
-   const a=x0+m.W*(.035+t*.24),b=a+m.W*.21,da=d0+m.rowD*.12,db=d1-m.rowD*.12,tray=selected?[.58,.64,.55]:[.13,.17,.14],soil=[.24,.18,.12];
+  // Microgreen racks draw the fitted trays; otherwise four illustrative trays.
+  if(v.trays){const trays=m.trayLayout||[0,1,2,3].map(t=>({x0:m.W*(.035+t*.24),x1:m.W*(.245+t*.24),y0:m.rowD*.12,y1:m.rowD*.88}));for(let t=0;t<trays.length;t++){
+   const a=x0+trays[t].x0,b=x0+trays[t].x1,da=d0+trays[t].y0,db=d0+trays[t].y1,tray=selected?[.58,.64,.55]:[.13,.17,.14],soil=[.24,.18,.12];
    box([a,z+3,da],[b,z+6,db],tray);box([a,z+6,da],[a+4,z+30,db],tray);box([b-4,z+6,da],[b,z+30,db],tray);box([a,z+6,da],[b,z+30,da+4],tray);box([a,z+6,db-4],[b,z+30,db],tray);
    box([a+4,z+6,da+4],[b-4,z+22,db-4],soil);
    // Dense young seedlings with pale or pink stems and two opposing cotyledons.

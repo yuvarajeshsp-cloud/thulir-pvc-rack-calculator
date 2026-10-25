@@ -65,7 +65,7 @@ function equipment(m,v){
  add('plug','Top socket plug',m.caps);add('footcap','Post foot / end cap',m.posts);
  if(shelfBase.type==='drain')add('draincell','Drain cell panel · 20 × 10 in, trim to fit',shelfBase.total,'panel');
  else add('mesh','Wire mesh shelf panel · cut to shelf size',m.growingShelves,'panel');
- add('tray','Growing tray (4 per shelf)',m.growingShelves*4);
+ const traysPerShelf=m.trayLayout?m.trayLayout.length:4;add('tray',`Growing tray (${traysPerShelf} per shelf)`,m.growingShelves*traysPerShelf);
  add('fan','120 mm PC fan',fans.length);add('fanmount','120 mm fan mounting bracket',fans.length);
  add('led'+v.ledFeet,v.ledFeet+' ft LED grow light',lights.length);add('lightclips','LED mounting clip pair',lights.length,'pair');add('lightchannel','Full-width LED mounting channel',lightSupports.length,'length');
  if(fans.length)add('fanpower','Fan power supply / distribution kit (size to total load)',1,'kit');
