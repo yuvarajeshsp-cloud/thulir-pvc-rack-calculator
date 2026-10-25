@@ -81,9 +81,26 @@ function build(){vertices=[];objects.clear();groups.clear();currentID=0;currentG
  for(const s of m.segments.filter(s=>s.name==='Bottom leg')){const p=world(s.a);cylinder(p,add(p,[0,12,0]),r*1.13,[.27,.31,.27]);}
  const wire=selected?[.77,.81,.75]:[.62,.69,.60];
  for(const shelf of m.shelfRects){
-  const f=shelf.f,z=shelf.z+r+2,x0=rackOX-m.W/2,x1=rackOX+m.W/2,d0=shelf.y0-m.D/2,d1=shelf.y1-m.D/2;
-  for(let x=x0;x<=x1+1;x+=m.W/Math.ceil(m.W/48))cylinder([x,z,d0],[x,z,d1],1.3,wire,0,6);
-  for(let d=d0;d<=d1+1;d+=m.rowD/Math.ceil(m.rowD/48))cylinder([x0,z+1,d],[x1,z+1,d],1.3,wire,0,6);
+  const f=shelf.f,z=shelf.z+r+(v.shelfBase==='drain'?9:2),x0=rackOX-m.W/2,x1=rackOX+m.W/2,d0=shelf.y0-m.D/2,d1=shelf.y1-m.D/2;
+  if(v.shelfBase==='drain'){
+   // Removable 20 by 10 inch modular PP drain cells. Grid edges trimmed at the frame.
+   const base=m.equipment.shelfBase,under=[.09,.13,.115],rib=selected?[.44,.50,.44]:[.24,.30,.27],edge=[.32,.39,.34];
+   for(let row=0;row<base.rows;row++)for(let col=0;col<base.cols;col++){
+    const xa=x0+col*base.panelW,xb=Math.min(x1,xa+base.panelW);
+    const da=d0+row*base.panelD,db=Math.min(d1,da+base.panelD);
+    if(xb-xa<=1||db-da<=1)continue;
+    box([xa,z-8,da],[xb,z-5,db],under);
+    const thick=Math.min(6,(xb-xa)/5,(db-da)/5);
+    for(let k=0;k<=3;k++){
+     const xx=xa+(xb-xa)*k/3,dd=da+(db-da)*k/3;
+     box([Math.max(xa,xx-thick/2),z-5,da],[Math.min(xb,xx+thick/2),z-1,db],k===0||k===3?edge:rib);
+     box([xa,z-5,Math.max(da,dd-thick/2)],[xb,z-1,Math.min(db,dd+thick/2)],k===0||k===3?edge:rib);
+    }
+   }
+  }else{
+   for(let x=x0;x<=x1+1;x+=m.W/Math.ceil(m.W/48))cylinder([x,z,d0],[x,z,d1],1.3,wire,0,6);
+   for(let d=d0;d<=d1+1;d+=m.rowD/Math.ceil(m.rowD/48))cylinder([x0,z+1,d],[x1,z+1,d],1.3,wire,0,6);
+  }
   if(v.trays){for(let t=0;t<4;t++){
    const a=x0+m.W*(.035+t*.24),b=a+m.W*.21,da=d0+m.rowD*.12,db=d1-m.rowD*.12,tray=selected?[.58,.64,.55]:[.13,.17,.14],soil=[.24,.18,.12];
    box([a,z+3,da],[b,z+6,db],tray);box([a,z+6,da],[a+4,z+30,db],tray);box([b-4,z+6,da],[b,z+30,db],tray);box([a,z+6,da],[b,z+30,da+4],tray);box([a,z+6,db-4],[b,z+30,db],tray);
