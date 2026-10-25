@@ -64,22 +64,23 @@
   y=paragraph(doc,y,'Cut = centre span - fitting take-outs + insertions. Bottom legs include one insertion; feet are counted separately. '+(d.lengthNote||'Lengths in feet and decimal inches, rounded to 0.01 in.'),{size:7});
   const st=d.stock;
   y=heading(doc,y+4,st.racks>1?`Stock pipe cutting plan · all ${st.racks} racks`:'Stock pipe cutting plan');
-  y=paragraph(doc,y+1,st.tooLong?'Incomplete plan: some pieces are longer than the stock pipe and are not packed.':`${st.total} × ${st.length} stock pipes${st.racks>1?` for all ${st.racks} racks, cut together so offcuts are reused`:''} · ${st.runs.length} cutting pattern${st.runs.length>1?'s':''} · ${st.offcut} total offcut. Each bar is one stock pipe, or a set of identical pipes; letters match the cut list. Pale space at the end is leftover pipe.`,{size:7.5});
-  const labelW=21,leftW=26,barW=W-labelW-leftW;
-  st.runs.forEach(r=>{
-   const n=r.to-r.from+1;
-   y=room(doc,y,15);doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...INK);doc.text(n>1?`Pipes ${r.from}-${r.to}`:`Pipe ${r.from}`,M,y+3.4);
-   if(n>1){doc.setFontSize(6.5);doc.setTextColor(...GREEN);doc.text(`× ${n}`,M,y+7);}
+  y=paragraph(doc,y+1,st.tooLong?'Incomplete plan: some pieces are longer than the stock pipe and are not packed.':`${st.total} × ${st.length} stock pipes${st.racks>1?` for all ${st.racks} racks, cut together so offcuts are reused`:''} · ${st.offcut} total offcut. Each bar is one stock pipe; letters match the cut list. Under each bar, the cuts are listed in the order to mark and cut them. Pale space at the end is leftover pipe.`,{size:7.5});
+  const labelW=15,leftW=24,barW=W-labelW-leftW;
+  st.bins.forEach((b,i)=>{
+   // Bar plus the full numbered cut sequence for this pipe (the "See cuts" list on screen).
+   const cols=3,colW=barW/cols,rows=Math.ceil(b.pieces.length/cols);
+   y=room(doc,y,11+rows*3.2);
+   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...INK);doc.text(`Pipe ${i+1}`,M,y+4.4);
    doc.setFillColor(240,242,236);doc.rect(M+labelW,y,barW,6.5,'F');
-   let x=M+labelW;for(const p of r.pieces){const w=Math.max(.5,p.frac*barW);doc.setFillColor(...hex(p.color));doc.rect(x,y,w,6.5,'F');doc.setDrawColor(255);doc.setLineWidth(.4);doc.line(x+w,y,x+w,y+6.5);
+   let x=M+labelW;for(const p of b.pieces){const w=Math.max(.5,p.frac*barW);doc.setFillColor(...hex(p.color));doc.rect(x,y,w,6.5,'F');doc.setDrawColor(255);doc.setLineWidth(.4);doc.line(x+w,y,x+w,y+6.5);
     if(w>6){doc.setTextColor(255);doc.setFontSize(w>17?6:5.2);doc.setFont('helvetica','bold');doc.text(w>17?`${p.code} ${txt(p.cut)}`:p.code,x+w/2,y+4.2,{align:'center'});}x+=w;}
-   doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(`${txt(r.left)} left${n>1?' each':''}`,PAGE_W-M,y+4.4,{align:'right'});
-   const counts=new Map();for(const p of r.pieces){const k=`${p.code} ${txt(p.cut)}`;counts.set(k,(counts.get(k)||0)+1);}
-   doc.setFontSize(6.3);doc.text(doc.splitTextToSize([...counts].map(([k,c])=>`${c} × ${k}`).join('   ·   '),barW)[0],M+labelW,y+10);
-   y+=14;
+   doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(`${txt(b.left)} left`,PAGE_W-M,y+4.4,{align:'right'});
+   // Cuts in cutting order, filled down each column so every entry stays on one line.
+   doc.setFontSize(6.6);b.pieces.forEach((p,n)=>{const cx=M+labelW+Math.floor(n/rows)*colW,cy=y+10.2+(n%rows)*3.2;doc.setTextColor(...MUTED);doc.text(`${n+1}.`,cx+3.2,cy,{align:'right'});doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.text(p.code,cx+4.4,cy);doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(`${p.name}  ${txt(p.cut)}`,colW-8)[0],cx+7.6,cy);});
+   y+=12+rows*3.2;
   });
   y=room(doc,y,12);
-  paragraph(doc,y+2,'Width and depth are post-centre dimensions. The stock plan is a first-fit estimate with one saw kerf per piece, not a guaranteed minimum. Dry-fit one frame and confirm tray clearance before batch cutting. This is a materials planner, not a structural load approval.',{size:7});
+  paragraph(doc,y+2,'Width and depth are post-centre dimensions. The stock plan packs all racks together to leave the least offcut, with one saw kerf per piece; it is an estimate, not a guaranteed minimum. Dry-fit one frame and confirm tray clearance before batch cutting. This is a materials planner, not a structural load approval.',{size:7});
   footers(doc);return doc;
  }
 

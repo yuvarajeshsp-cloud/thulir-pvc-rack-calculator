@@ -10,7 +10,7 @@ const valid=(m,v)=>{
 };
 
 test('racks are cut together so one rack\'s offcut feeds the next',()=>{
- for(const [o,expected] of [[{},26],[{layout:'step',steps:3},18],[{width:5,shelves:6},40]]){
+ for(const [o,expected] of [[{},28],[{layout:'step',steps:3},18],[{width:5,shelves:6},36]]){
   const v={...defaults,racks:4,...o},m=calculate(v),single=calculate({...v,racks:1});
   valid(m,v);
   assert.equal(m.bins.length,expected);

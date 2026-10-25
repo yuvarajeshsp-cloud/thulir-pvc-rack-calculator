@@ -16,7 +16,7 @@ test('width bracing ties the tall posts across the rack at each lower step heigh
 test('width and depth bracing ties the side posts to the post in front without any 6-way fitting',()=>{
  const f=step({stepBrace:'full'}),w=step({stepBrace:'width'});
  assert.equal(named(f,'Width brace').length,6);assert.equal(named(f,'Depth brace').length,6);
- assert.deepEqual([f.counts[4],f.counts[5],f.counts[6],f.counts[7]],[4,12,6,6]);
+ assert.deepEqual([f.counts[4],f.counts[5],f.counts[6],f.counts[7]],[8,8,6,6]);
  assert.equal(f.counts[8],undefined);assert.ok(f.joints.every(j=>[3,4,5,6,7].includes(j.t)));
  assert.equal(w.counts[7],f.counts[7]);
  assert.ok(!f.equipment.bill.some(r=>r.id==='joint6'));

@@ -55,9 +55,9 @@ test('rack plan geometry is per rack and independent of the rack quantity',()=>{
  const one=calculate({...defaults,racks:1}),five=calculate({...defaults,racks:5});
  assert.deepEqual(one.cuts,five.cuts);assert.deepEqual(one.counts,five.counts);const parts=m=>m.equipment.bill.filter(r=>!r.id.startsWith('stock-'));assert.deepEqual(parts(one),parts(five));
 });
-test('estimate prices foot end caps and top socket plugs for every rack',()=>{
+test('estimate prices foot end caps for every rack and needs no top socket plugs',()=>{
  const {nodes}=boot({profit:0,installation:0,rackQuantity:2,prices:{footcap:24,plug:25},extra:[]});
  const rows=nodes.get('priceRows').innerHTML;
  assert.match(rows,/Post foot \/ end cap/);assert.match(rows,/6 × 2 = 12/);
- assert.match(rows,/Top socket plug/);assert.match(rows,/2 × 2 = 4/);
+ assert.doesNotMatch(rows,/Top socket plug/);
 });
