@@ -14,9 +14,12 @@ function shelfBasePlan(m,v){
 function equipment(m,v){
  const vertical=m.layout==='vertical',fans=[],lights=[],water=[],cables=[],nozzles=[],lightSupports=[];
  const fanCount=vertical&&v.fans?Math.max(1,Math.min(4,Math.round(v.fansPerShelf))):0;
- const lightCount=vertical&&v.lights?Math.max(1,Math.min(4,Math.round(v.lightsPerShelf))):0;
+ const ledLength=v.ledFeet*304.8,fitCount=len=>Math.floor((m.W+v.od+.5)/len);
+ // Whole fixtures that fit inside the frame's outer edges, centred on the shelf; none if one fixture is longer.
+ const perRow=fitCount(ledLength),wantLights=vertical&&v.lights;
+ const lightCount=wantLights&&perRow?Math.max(1,Math.min(4,Math.round(v.lightsPerShelf))):0;
  const p=(x,y,z)=>({x,y,z}),route=(list,a,b)=>{if(Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)>.01)list.push({a,b});};
- const offset=v.od/2+7,ledLength=v.ledFeet*304.8,perRow=Math.max(1,Math.ceil((m.W-.001)/ledLength));
+ const offset=v.od/2+7;
  for(const s of m.shelfRects){
   const upper=s.z+m.P,ceiling=upper-55;
   for(let i=0;i<fanCount;i++){
@@ -81,7 +84,12 @@ function equipment(m,v){
   warnings.push('Drain-cell panel counts assume a rectangular grid with edge trimming; confirm actual interior opening, offcut reuse, fastening and wet-tray load capacity.');
   if(!v.trayRail||!v.center)warnings.push('Drain cells need secure support: enable the tray support rail and centre supports, or add appropriately sized independent supports.');
  }
- if(lights.length&&perRow*ledLength>m.W+.1)warnings.push('Whole LED fixtures overhang this rack width. Adjust the width or light length for an exact fit.');
+ const size=n=>typeof feetInches==='function'?feetInches(n):`${(n/304.8).toFixed(2)} ft`;
+ if(wantLights){
+  const other=v.ledFeet===4?2:4,otherLit=fitCount(other*304.8)*other*304.8,lit=perRow*ledLength;
+  if(!perRow)warnings.push(`${v.ledFeet} ft LEDs are longer than this ${size(m.W)} wide frame, so none are placed.${otherLit?` Choose ${other} ft LEDs or widen the rack.`:' Widen the rack.'}`);
+  else if(lit<m.W*.8)warnings.push(`Whole ${v.ledFeet} ft LEDs light ${size(lit)} of the ${size(m.W)} shelf width.${otherLit>lit?` ${other} ft LEDs would light ${size(otherLit)}.`:''}`);
+ }
  if(fans.length&&m.rowD/(fanCount+1)<130)warnings.push('Fans are too close along the left side. Reduce fans per shelf or increase rack depth.');
  if(fans.length&&m.P<220)warnings.push('Shelf spacing is too tight for the illustrated fan and crop clearance.');
  if(nozzles.length&&m.layout==='vertical'&&m.P<210)warnings.push('Increase shelf spacing for the sprinkler branches and crops.');
