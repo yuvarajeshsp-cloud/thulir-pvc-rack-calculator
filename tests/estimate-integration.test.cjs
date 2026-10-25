@@ -53,7 +53,7 @@ test('estimate quantity follows the configured number of racks',()=>{
 });
 test('rack plan geometry is per rack and independent of the rack quantity',()=>{
  const one=calculate({...defaults,racks:1}),five=calculate({...defaults,racks:5});
- assert.deepEqual(one.cuts,five.cuts);assert.deepEqual(one.counts,five.counts);assert.deepEqual(one.equipment.bill,five.equipment.bill);
+ assert.deepEqual(one.cuts,five.cuts);assert.deepEqual(one.counts,five.counts);const parts=m=>m.equipment.bill.filter(r=>!r.id.startsWith('stock-'));assert.deepEqual(parts(one),parts(five));
 });
 test('estimate prices foot end caps and top socket plugs for every rack',()=>{
  const {nodes}=boot({profit:0,installation:0,rackQuantity:2,prices:{footcap:24,plug:25},extra:[]});

@@ -23,7 +23,8 @@
     let extraSubtotal = 0;
     const lines = rows.map(row => {
       const perRackQty = nonnegative(row.qty);
-      const totalQty = round(perRackQty * (row.custom ? 1 : racks));
+      // A row planned for the whole order (stock pipes) gives its total directly.
+      const totalQty = row.orderQty != null && !row.custom ? round(nonnegative(row.orderQty)) : round(perRackQty * (row.custom ? 1 : racks));
       const unpriced = prices[row.id] === undefined || prices[row.id] === null || prices[row.id] === '';
       const baseRate = unpriced ? null : nonnegative(prices[row.id]);
       const unitRate = unpriced ? null : row.custom ? round(baseRate) : customerRate(baseRate, profit);

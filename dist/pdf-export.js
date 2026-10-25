@@ -63,17 +63,19 @@
   y=doc.lastAutoTable.finalY+4;
   y=paragraph(doc,y,'Cut = centre span - fitting take-outs + insertions. Bottom legs include one insertion; feet are counted separately. Lengths in feet and decimal inches, rounded to 0.01 in.',{size:7});
   const st=d.stock;
-  y=heading(doc,y+4,st.racks>1?`Stock pipe cutting plan · per rack (repeat for all ${st.racks} racks)`:'Stock pipe cutting plan');
-  y=paragraph(doc,y+1,st.tooLong?'Incomplete plan: some pieces are longer than the stock pipe and are not packed.':`${st.perRack} × ${st.length} stock pipes per rack${st.racks>1?` · ${st.perRack*st.racks} in total`:''}. Each bar is one stock pipe; letters match the cut list. Pale space at the end is leftover pipe.`,{size:7.5});
-  const labelW=15,leftW=24,barW=W-labelW-leftW;
-  st.bins.forEach((b,i)=>{
-   y=room(doc,y,15);doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...INK);doc.text(`Pipe ${i+1}`,M,y+4.4);
+  y=heading(doc,y+4,st.racks>1?`Stock pipe cutting plan · all ${st.racks} racks`:'Stock pipe cutting plan');
+  y=paragraph(doc,y+1,st.tooLong?'Incomplete plan: some pieces are longer than the stock pipe and are not packed.':`${st.total} × ${st.length} stock pipes${st.racks>1?` for all ${st.racks} racks, cut together so offcuts are reused`:''} · ${st.runs.length} cutting pattern${st.runs.length>1?'s':''} · ${st.offcut} total offcut. Each bar is one stock pipe, or a set of identical pipes; letters match the cut list. Pale space at the end is leftover pipe.`,{size:7.5});
+  const labelW=21,leftW=26,barW=W-labelW-leftW;
+  st.runs.forEach(r=>{
+   const n=r.to-r.from+1;
+   y=room(doc,y,15);doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...INK);doc.text(n>1?`Pipes ${r.from}-${r.to}`:`Pipe ${r.from}`,M,y+3.4);
+   if(n>1){doc.setFontSize(6.5);doc.setTextColor(...GREEN);doc.text(`× ${n}`,M,y+7);}
    doc.setFillColor(240,242,236);doc.rect(M+labelW,y,barW,6.5,'F');
-   let x=M+labelW;for(const p of b.pieces){const w=Math.max(.5,p.frac*barW);doc.setFillColor(...hex(p.color));doc.rect(x,y,w,6.5,'F');doc.setDrawColor(255);doc.setLineWidth(.4);doc.line(x+w,y,x+w,y+6.5);
+   let x=M+labelW;for(const p of r.pieces){const w=Math.max(.5,p.frac*barW);doc.setFillColor(...hex(p.color));doc.rect(x,y,w,6.5,'F');doc.setDrawColor(255);doc.setLineWidth(.4);doc.line(x+w,y,x+w,y+6.5);
     if(w>6){doc.setTextColor(255);doc.setFontSize(w>17?6:5.2);doc.setFont('helvetica','bold');doc.text(w>17?`${p.code} ${txt(p.cut)}`:p.code,x+w/2,y+4.2,{align:'center'});}x+=w;}
-   doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(`${txt(b.left)} left`,PAGE_W-M,y+4.4,{align:'right'});
-   const counts=new Map();for(const p of b.pieces){const k=`${p.code} ${txt(p.cut)}`;counts.set(k,(counts.get(k)||0)+1);}
-   doc.setFontSize(6.3);doc.text(doc.splitTextToSize([...counts].map(([k,n])=>`${n} × ${k}`).join('   ·   '),barW)[0],M+labelW,y+10);
+   doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTED);doc.text(`${txt(r.left)} left${n>1?' each':''}`,PAGE_W-M,y+4.4,{align:'right'});
+   const counts=new Map();for(const p of r.pieces){const k=`${p.code} ${txt(p.cut)}`;counts.set(k,(counts.get(k)||0)+1);}
+   doc.setFontSize(6.3);doc.text(doc.splitTextToSize([...counts].map(([k,c])=>`${c} × ${k}`).join('   ·   '),barW)[0],M+labelW,y+10);
    y+=14;
   });
   y=room(doc,y,12);

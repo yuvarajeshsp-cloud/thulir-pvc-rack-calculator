@@ -59,7 +59,8 @@ function equipment(m,v){
  const length=list=>list.reduce((n,s)=>n+Math.hypot(s.a.x-s.b.x,s.a.y-s.b.y,s.a.z-s.b.z),0);
  const shelfBase=shelfBasePlan(m,v);
  const bill=[],add=(id,label,qty,unit='each')=>{if(qty>0)bill.push({id,label,qty,unit});};
- add('stock-'+v.stock,`PVC stock pipe · ${Number((v.stock/0.3048).toFixed(2))} ft`,m.bins.length,'length');
+ // Stock pipes are planned for the whole order, so the row carries its order total (orderQty) as well as the per-rack share.
+ add('stock-'+v.stock,`PVC stock pipe · ${Number((v.stock/0.3048).toFixed(2))} ft`,m.bins.length/(m.racks||1),'length');if(bill.length&&bill[bill.length-1].id.startsWith('stock-'))bill[bill.length-1].orderQty=m.bins.length;
  for(const t of [3,4,5])add('joint'+t,t+'-way PVC fitting',m.counts[t]);
  add('jointT','PVC T joint (equal tee)',m.counts[6]||0);add('jointX','PVC cross T joint',m.counts[7]||0);
  add('plug','Top socket plug',m.caps);add('footcap','Post foot / end cap',m.posts);
