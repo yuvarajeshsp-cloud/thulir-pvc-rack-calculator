@@ -1,6 +1,22 @@
 const buildRackEquipment=typeof module!=='undefined'?require('./equipment.js'):window.buildEquipment;
-const defaults={sprinklerOn:true,fansOn:true,lightsOn:true,fans:false,fansPerShelf:2,lights:false,lightsPerShelf:2,ledFeet:4,irrigation:false,layout:'vertical',steps:3,stepRise:12,width:4,depth:2,shelves:4,gap:18,foot:152.4,center:true,overhead:true,trays:true,shelfBase:'mesh',od:33.4,insert:25,c3:35,c4:35,c5:35,c6:35,c7:35,trayRail:true,confirmed:false,stock:6.096,kerf:3,racks:1};
+const defaults={sprinklerOn:true,fansOn:true,lightsOn:true,fans:false,fansPerShelf:2,lights:false,lightsPerShelf:2,ledFeet:4,irrigation:false,layout:'vertical',steps:3,stepRise:12,width:4,depth:2,shelves:4,gap:18,foot:152.4,center:true,overhead:true,trays:true,shelfBase:'mesh',od:33.4,insert:25,c3:35,c4:35,c5:35,c6:35,c7:35,trayRail:true,confirmed:false,stock:6.096,kerf:3,racks:1,microgreen:false,trayLength:24,trayWidth:12,traysPerRow:4,trayGap:.5};
+// Microgreen racks size the shelf from the tray: trays sit side by side between the posts, and each tray's
+// front and back ends rest across the front and back rails. Tray inputs are inches; returned sizes are feet.
+function trayFit(v){
+ const n=Math.max(1,Math.round(v.traysPerRow)),bays=v.center?2:1,perBay=Math.ceil(n/bays),g=v.trayGap*25.4,corner=Math.max(v.c3,v.c4);
+ const bay=perBay*v.trayWidth*25.4+g+corner+(v.center?v.c5:corner),depth=v.trayLength*25.4-v.od-g;
+ return {width:bays*bay/304.8,depth:depth/304.8,n,bays,perBay,bay,overhang:g/2};
+}
+// Tray rectangles for one shelf: x across the rack, y from the shelf's front rail (negative = past the rail).
+function layoutTrays(plan,v){
+ const {n,bays,perBay}=trayFit(v),tw=v.trayWidth*25.4,L=v.trayLength*25.4,corner=Math.max(v.c3,v.c4),trays=[];
+ for(let b=0;b<bays;b++){const k=b===0?perBay:n-perBay;if(k<=0)continue;
+  const left=plan.xs[b]+(b===0?corner:v.c5),right=plan.xs[b+1]-(b===bays-1?corner:v.c5),start=(left+right)/2-k*tw/2;
+  for(let i=0;i<k;i++)trays.push({x0:start+i*tw,x1:start+(i+1)*tw,y0:(plan.rowD-L)/2,y1:(plan.rowD+L)/2});}
+ return trays;
+}
 function calculate(v){
+ if(v.microgreen){const fit=trayFit(v);v={...v,width:fit.width,depth:fit.depth};}
  if(v.layout==='step')return calculateSteps(v);
  const W=v.width*304.8,D=v.depth*304.8,F=v.shelves+(v.overhead?1:0),P=v.gap*25.4+v.od,posts=v.center?6:4;
  const joints=[],segments=[],cuts=[],C=t=>v['c'+t],I=v.insert,base=Math.max(F===1?v.c3:v.c4,v.center?v.c5:0)+v.foot;
@@ -49,6 +65,7 @@ function finalizePlan(plan,v){const {cuts,joints}=plan;
   if(p.cut+v.kerf>stock){tooLong.push(p);continue;}if(p.cut<=0)continue;
   let bin=bins.find(b=>b.used+p.cut+v.kerf<=stock+.001);if(!bin){bin={used:0,pieces:[]};bins.push(bin);}bin.pieces.push(p);bin.used+=p.cut+v.kerf;
  }
+ if(v.microgreen)plan.trayLayout=layoutTrays(plan,v);
  const result={...plan,groups:[...grouped.values()],bins,tooLong,total:cuts.reduce((a,b)=>a+b.cut,0),counts:{3:joints.filter(j=>j.t===3).length,4:joints.filter(j=>j.t===4).length,5:joints.filter(j=>j.t===5).length,6:joints.filter(j=>j.t===6).length,7:joints.filter(j=>j.t===7).length}};result.equipment=buildRackEquipment(result,v);return result;
 }
 
@@ -59,7 +76,7 @@ function feetInches(length){
  return `${sign}${feet} ft ${Number(inches.toFixed(2))} in`;
 }
 function decimalInches(length){return Number((length/25.4).toFixed(4));}
-if(typeof module!=='undefined')module.exports={calculate,defaults,feetInches,decimalInches};
+if(typeof module!=='undefined')module.exports={calculate,defaults,feetInches,decimalInches,trayFit};
 if(typeof document!=='undefined'){
 const $=id=>document.getElementById(id),colors={3:'#d78b3c',4:'#44836f',5:'#7484b7',6:'#b8577a',7:'#8a6d2f'},memberColors={'Width half-rail':'#356aa0','Width rail':'#356aa0','Depth rail':'#b45d18','Centre depth rail':'#23766b','Depth half-rail':'#b45d18','Centre depth half-rail':'#23766b','Tray support rail':'#a0466b','Upright':'#76569b','Step riser':'#76569b','Bottom leg':'#805c38'};let values={...defaults},model,view='iso',angle=-.65,highlight=0;
 try{const saved=JSON.parse(localStorage.getItem('thulirRackV1')||'null');if(saved)for(const k in defaults)if(typeof saved[k]===typeof defaults[k])values[k]=saved[k];
@@ -77,9 +94,10 @@ const accessoryImages={plug:['pvc-socket-plug.png','White PVC socket plug with a
 const accessoryThumb=id=>accessoryImages[id]?`<span class="fitting-thumb"><img src="assets/${accessoryImages[id][0]}" alt="${accessoryImages[id][1]}" width="100" height="100" loading="lazy" decoding="async"></span>`:'';;
 const fittingTypes=m=>[3,4,5,6,7].filter(t=>t<6||m.counts[t]);
 const pairFields=new Set(['width','depth','stock']);
+function showPair(k,value=values[k]){const el=$(k),ft=k==='stock'?value/.3048:value;el.value=Math.floor(ft);$(k+'In').value=Number(((ft-Math.floor(ft))*12).toFixed(4));$(k+'In').dataset.original=$(k+'In').value;el.dataset.original=el.value;}
 function sync(){
  for(const k in defaults){const el=$(k);if(k==='layout'){el.value=values.layout;continue;}if(el.type==='checkbox'){el.checked=values[k];continue;}
-  if(pairFields.has(k)){const ft=k==='stock'?values[k]/.3048:values[k];el.value=Math.floor(ft);$(k+'In').value=Number(((ft-Math.floor(ft))*12).toFixed(4));$(k+'In').dataset.original=$(k+'In').value;}
+  if(pairFields.has(k))showPair(k);
   else el.value=inchFields.has(k)?decimalInches(values[k]):values[k];
   el.dataset.original=el.value;
  }
@@ -98,7 +116,13 @@ function read(){
  values.shelves=Math.round(values.shelves);values.racks=Math.max(1,Math.min(20,Math.round(values.racks)||1));values.steps=Math.max(1,Math.min(6,Math.round(values.steps)));
 }
 const fmt=n=>Number(n.toFixed(1)).toLocaleString('en-IN');
-function render(){read();model=calculate(values);try{localStorage.setItem('thulirRackV1',JSON.stringify(values));}catch(e){}const m=model,R=values.racks,racksNote=R>1?` · ${R} racks`:'';
+// Microgreen racks take width and depth from the tray fit. The size inputs show the fitted size while it is
+// on, and the typed size is kept so unticking it restores the standard rack.
+function applyTrayFit(){const fit=values.microgreen?trayFit(values):null;$('trayFitOptions').hidden=!fit;for(const id of ['width','widthIn','depth','depthIn'])$(id).disabled=!!fit;
+ showPair('width',fit?fit.width:values.width);showPair('depth',fit?fit.depth:values.depth);if(!fit)return;for(const id of ['widthIn','depthIn'])$(id).value=$(id).dataset.original=Number(Number($(id).value).toFixed(2));
+ const inch=n=>Number((n/25.4).toFixed(2)),step=values.layout==='step';
+ $('trayFitNote').textContent=`${fit.n} trays of ${values.trayLength} × ${values.trayWidth} in per ${step?'step':'shelf'}${fit.bays>1?` · ${fit.n-fit.perBay===fit.perBay?`${fit.perBay} per bay`:`${fit.perBay} and ${fit.n-fit.perBay} in the two bays`} either side of the centre posts`:''}. Width ${feetInches(fit.width*304.8)} × ${step?'row ':''}depth ${feetInches(fit.depth*304.8)} post centres: each tray end overhangs the outer edge of its rail by ${inch(fit.overhang)} in. Measure your tray across the top rim.`;}
+function render(){read();applyTrayFit();model=calculate(values);try{localStorage.setItem('thulirRackV1',JSON.stringify(values));}catch(e){}const m=model,R=values.racks,racksNote=R>1?` · ${R} racks`:'';
  const sb=m.equipment.shelfBase;
  $('shelfBaseNote').textContent=sb.type==='drain'
   ?`Estimated ${sb.perShelf} drain cells per shelf (${sb.cols} × ${sb.rows}, oriented ${Math.round(sb.panelW/25.4)} × ${Math.round(sb.panelD/25.4)} in); ${sb.total*R} total. Cut surplus and support every joint.`
@@ -115,7 +139,7 @@ function render(){read();model=calculate(values);try{localStorage.setItem('thuli
  const waste=m.bins.length*values.stock*1000-m.bins.reduce((a,b)=>a+b.used,0);$('stocknote').textContent=m.tooLong.length?'Incomplete plan: over-length pieces are not packed.':R>1?`Cutting plan for one rack — repeat it for each of the ${R} racks. ${m.bins.length} × ${feetInches(values.stock*1000)} lengths per rack (${m.bins.length*R} in total) · ${feetInches(waste)} reusable offcut per rack after kerf · first-fit estimate`:`${m.bins.length} × ${feetInches(values.stock*1000)} lengths · ${feetInches(waste)} reusable offcut after kerf · first-fit estimate`;
  const usedMembers=[...new Set(m.cuts.map(p=>p.name))];
  $('stockLegend').innerHTML=usedMembers.map(name=>`<div class="stock-key"><span class="cut-key" style="background:${memberColors[name]}">${memberCodes[name]}</span><span><b>${name}</b><small>${memberDescriptions[name]}</small></span></div>`).join('')+'<div class="stock-key"><span class="offcut-key"></span><span><b>Offcut</b><small>Pale space at the end = leftover pipe</small></span></div>';
- $('stockbars').innerHTML=m.bins.map((b,i)=>`<div class="stock-pipe"><div class="stock-row"><span class="stock-id">Pipe ${i+1}</span><div class="stock-track">${b.pieces.map(p=>`<span class="piece" style="width:${(p.cut+values.kerf)/(values.stock*10)}%;background:${memberColors[p.name]}" title="${memberCodes[p.name]} — ${p.name}: ${feetInches(p.cut)}">${memberCodes[p.name]} · ${feetInches(p.cut)}</span>`).join('')}</div><span class="leftover">${feetInches(values.stock*1000-b.used)} left</span></div><details class="cut-sequence"><summary>See cuts for pipe ${i+1} · ${b.pieces.length} pieces</summary><ol>${b.pieces.map(p=>`<li><span class="cut-key" style="background:${memberColors[p.name]}">${memberCodes[p.name]}</span><span>${p.name}</span><b>${feetInches(p.cut)}</b></li>`).join('')}</ol></details></div>`).join('');draw();window.currentRack={model,values:{...values}};window.dispatchEvent(new CustomEvent('rackchange',{detail:window.currentRack}));
+ $('stockbars').innerHTML=m.bins.map((b,i)=>`<div class="stock-pipe"><div class="stock-row"><span class="stock-id">Pipe ${i+1}</span><div class="stock-track">${b.pieces.map(p=>`<span class="piece" style="width:${(p.cut+values.kerf)/(values.stock*10)}%;background:${memberColors[p.name]}" title="${memberCodes[p.name]} — ${p.name}: ${feetInches(p.cut)}">${memberCodes[p.name]} · ${feetInches(p.cut)}</span>`).join('')}</div><span class="leftover">${feetInches(values.stock*1000-b.used)} left</span></div><details class="cut-sequence"><summary>See cuts for pipe ${i+1} · ${b.pieces.length} pieces</summary><ol>${b.pieces.map(p=>`<li><span class="cut-key" style="background:${memberColors[p.name]}">${memberCodes[p.name]}</span><span>${p.name}</span><b>${feetInches(p.cut)}</b></li>`).join('')}</ol></details></div>`).join('');draw();window.currentRack={model,values:{...values,width:model.W/304.8,depth:model.rowD/304.8}};window.dispatchEvent(new CustomEvent('rackchange',{detail:window.currentRack}));
 }
 function draw(){const m=model,v=values,items=[];let raw;
  const real=window.PVCViewer?.available;
@@ -130,7 +154,7 @@ function draw(){const m=model,v=values,items=[];let raw;
  const poly=(pts,fill,stroke='#7b9581',op=1)=>{const q=pts.map(point);items.push({z:q.reduce((s,p)=>s+p[2],0)/q.length,html:`<polygon points="${q.map(p=>p.slice(0,2).join(',')).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width=".65" opacity="${op}"/>`});};
  for(const o of offsets){ox=o;
  for(const rect of m.shelfRects){const z=rect.z,y0s=rect.y0,y1s=rect.y1;poly([{x:0,y:y0s,z},{x:m.W,y:y0s,z},{x:m.W,y:y1s,z},{x:0,y:y1s,z}],v.shelfBase==='drain'?'url(#drainCell)':'url(#mesh)',v.shelfBase==='drain'?'#50645d':'#9aa998',highlight?.2:.8);
- if(v.trays){for(let i=0;i<4;i++){const x0=m.W*(.025+i*.245),x1=x0+m.W*.22,y0=y0s+m.rowD*.1,y1=y1s-m.rowD*.1;poly([{x:x0,y:y0,z:z+14},{x:x1,y:y0,z:z+14},{x:x1,y:y1,z:z+14},{x:x0,y:y1,z:z+14}],'#344d3c','#203b34',highlight?.15:1);poly([{x:x0+8,y:y0+8,z:z+36},{x:x1-8,y:y0+8,z:z+36},{x:x1-8,y:y1-8,z:z+36},{x:x0+8,y:y1-8,z:z+36}],'url(#leaves)','#6d914d',highlight?.15:1);}}
+ if(v.trays){const trays=m.trayLayout||[0,1,2,3].map(i=>({x0:m.W*(.025+i*.245),x1:m.W*(.025+i*.245)+m.W*.22,y0:m.rowD*.1,y1:m.rowD*.9}));for(const t of trays){const x0=t.x0,x1=t.x1,y0=y0s+t.y0,y1=y0s+t.y1;poly([{x:x0,y:y0,z:z+14},{x:x1,y:y0,z:z+14},{x:x1,y:y1,z:z+14},{x:x0,y:y1,z:z+14}],'#344d3c','#203b34',highlight?.15:1);poly([{x:x0+8,y:y0+8,z:z+36},{x:x1-8,y:y0+8,z:z+36},{x:x1-8,y:y1-8,z:z+36},{x:x0+8,y:y1-8,z:z+36}],'url(#leaves)','#6d914d',highlight?.15:1);}}
  }
  for(const s of m.segments){const a=point(s.a),b=point(s.b),w=Math.max(3,v.od*scale);items.push({z:(a[2]+b[2])/2,html:`<g opacity="${highlight?.25:1}"><path d="M${a[0]} ${a[1]}L${b[0]} ${b[1]}" stroke="#adb8ad" stroke-width="${w+1.5}" stroke-linecap="round"/><path d="M${a[0]-.4} ${a[1]-.4}L${b[0]-.4} ${b[1]-.4}" stroke="#f7f9f2" stroke-width="${w-1}" stroke-linecap="round"/></g>`});}
  for(const j of m.joints){const p=point(j),r=Math.max(4,v.od*scale*.72);items.push({z:p[2]+1,html:`<circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${colors[j.t]}" stroke="#fff" stroke-width="1.3" opacity="${highlight&&highlight!==j.t?.15:1}"><title>${fittingInfo[j.t][0]} · frame ${j.f+1}</title></circle>`});}
