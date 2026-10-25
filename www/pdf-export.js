@@ -61,7 +61,7 @@
    columnStyles:{0:{cellWidth:9,halign:'center',fontStyle:'bold',textColor:[255,255,255]},2:{halign:'right'},3:{halign:'right',cellWidth:14},4:{halign:'right'}},
    didParseCell:c=>{if(c.section==='body'&&c.column.index===0&&c.cell.raw?.color)c.cell.styles.fillColor=hex(c.cell.raw.color);}});
   y=doc.lastAutoTable.finalY+4;
-  y=paragraph(doc,y,'Cut = centre span - fitting take-outs + insertions. Bottom legs include one insertion; feet are counted separately. Lengths in feet and decimal inches, rounded to 0.01 in.',{size:7});
+  y=paragraph(doc,y,'Cut = centre span - fitting take-outs + insertions. Bottom legs include one insertion; feet are counted separately. '+(d.lengthNote||'Lengths in feet and decimal inches, rounded to 0.01 in.'),{size:7});
   const st=d.stock;
   y=heading(doc,y+4,st.racks>1?`Stock pipe cutting plan · all ${st.racks} racks`:'Stock pipe cutting plan');
   y=paragraph(doc,y+1,st.tooLong?'Incomplete plan: some pieces are longer than the stock pipe and are not packed.':`${st.total} × ${st.length} stock pipes${st.racks>1?` for all ${st.racks} racks, cut together so offcuts are reused`:''} · ${st.runs.length} cutting pattern${st.runs.length>1?'s':''} · ${st.offcut} total offcut. Each bar is one stock pipe, or a set of identical pipes; letters match the cut list. Pale space at the end is leftover pipe.`,{size:7.5});

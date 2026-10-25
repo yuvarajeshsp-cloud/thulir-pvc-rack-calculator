@@ -107,3 +107,9 @@ span.fitting-thumb{display:block}.fitting>span:not(.number):not(.fitting-thumb){
 .tray-fit{margin:-8px 0 16px;padding:12px 14px;border-radius:12px;background:#f5f5ef;border:1px solid #e8ebe2}.tray-fit p{margin:4px 0 0}
 .brace-label select{display:block;width:100%;padding:10px 12px;margin:7px 0 4px;border:1px solid #cdd9c5;border-radius:8px;background:#f1f5ec;color:#294839;font:inherit;font-size:13px}
 .stock-id .stock-times{display:block;margin-top:2px;font-size:10px;color:var(--green);font-weight:700}.stock-row .stock-id{width:74px}@media(max-width:680px){.stock-row .stock-id{width:58px}}
+
+.unit-toggle{display:inline-flex;flex-shrink:0;padding:3px;gap:2px;border-radius:999px;background:#e6ebe0}
+.unit-toggle button{min-height:32px;padding:5px 12px;border:0;border-radius:999px;background:transparent;color:var(--muted);font-size:12px;font-weight:700}
+.unit-toggle button[aria-checked=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px #1d353022}
+@media(max-width:680px){header .unit-toggle{margin-left:auto}header .unit-toggle+#print{margin-left:0}}
+@media print{.unit-toggle{display:none}}
