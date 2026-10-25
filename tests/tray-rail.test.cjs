@@ -23,7 +23,7 @@ test('turning the tray rail off restores the original frame',()=>{
 });
 
 test('stepped racks and racks without centre supports use only T joints where needed',()=>{
- const step=calculate({...defaults,layout:'step',steps:3});
+ const step=calculate({...defaults,layout:'step',steps:3,stepBrace:'none'});
  assert.equal(step.counts[6],6);assert.equal(step.counts[7],3);
  const plain=calculate({...defaults,center:false});
  assert.equal(plain.counts[6],2*defaults.shelves);assert.equal(plain.counts[7],0);

@@ -105,3 +105,4 @@ span.fitting-thumb{display:block}.fitting>span:not(.number):not(.fitting-thumb){
 .shelf-base-choice select:focus-visible{outline:2px solid #3b7950;outline-offset:2px}
 
 .tray-fit{margin:-8px 0 16px;padding:12px 14px;border-radius:12px;background:#f5f5ef;border:1px solid #e8ebe2}.tray-fit p{margin:4px 0 0}
+.brace-label select{display:block;width:100%;padding:10px 12px;margin:7px 0 4px;border:1px solid #cdd9c5;border-radius:8px;background:#f1f5ec;color:#294839;font:inherit;font-size:13px}
